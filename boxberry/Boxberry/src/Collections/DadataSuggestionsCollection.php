@@ -1,6 +1,6 @@
 <?php
 
-namespace boxberry\Collections;
+namespace Boxberry\Collections;
 
 use Boxberry\Collections\Exceptions\BadValueException;
 use Boxberry\Models\DadataSuggestions;

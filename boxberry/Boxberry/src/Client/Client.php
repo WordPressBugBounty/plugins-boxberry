@@ -19,7 +19,7 @@ namespace Boxberry\Client;
 use Boxberry\Client\Exceptions\BadSettingsException;
 use Boxberry\Client\Exceptions\UnknownTypeException;
 use Boxberry\Requests;
-use boxberry\Requests\DadataSuggestionsRequest;
+use Boxberry\Requests\DadataSuggestionsRequest;
 use Boxberry\Requests\DeliveryCalculationRequest;
 use Boxberry\Requests\Request;
 

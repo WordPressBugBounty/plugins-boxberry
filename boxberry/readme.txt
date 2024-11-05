@@ -1,13 +1,15 @@
 === Интеграция со службой доставки Boxberry ===
 
-Tags: доставка, модуль, плагин, boxberry, Boxberry, woocommerce, wordpress, цена доставки, срок доставки, стоимость доставки, служба доставки, boxberry shipping
-Stable tag: 2.20
-Tested up to: 6.2.2
+Tags: доставка, модуль, плагин, boxberry, woocommerce
+Stable tag: 2.21
+Tested up to: 6.6.2
 Contributors: akazanstev, mrswed
 Requires at least: 4.9
 Requires PHP: 5.4
 License: GPLv2
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
+
+Удобный плагин для интеграции с Boxberry: расчет стоимости и сроков доставки, выбор ПВЗ, выгрузка заказов, печать этикеток и актов.
 
 == Description ==
 
@@ -29,6 +31,10 @@ License URI: http://www.gnu.org/licenses/gpl-2.0.html
 [Техническая поддержка](https://sd.boxberry.ru)
 
 == Changelog ==
+
+= 2.21 =
+
+* Исправлена ошибка в настройке способов доставки при использовании некоторых способов оплаты
 
 = 2.20 =
 

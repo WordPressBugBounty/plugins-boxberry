@@ -1,6 +1,6 @@
 <?php
 
-namespace boxberry\Requests;
+namespace Boxberry\Requests;
 
 class DadataSuggestionsRequest extends Request
 {

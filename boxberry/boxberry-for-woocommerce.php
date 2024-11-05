@@ -2,7 +2,7 @@
 /*
 Plugin Name: Boxberry for WooCommerce
 Description: The plugin allows you to automatically calculate the shipping cost and create Parsel for Boxberry
-Version: 2.20
+Version: 2.21
 Author: Boxberry
 Author URI: Boxberry.ru
 Text Domain: boxberry
@@ -222,20 +222,69 @@ if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', g
                 return false;
             }
 
+            private function get_option_from_db( $args ) {
+                global $wpdb;
+                $query = "SELECT * FROM {$wpdb->prefix}options WHERE option_name = %s LIMIT 1";
+
+                return $wpdb->get_results( $wpdb->prepare( $query, $args ) );
+            }
+
+            private function get_payment_method_title( $payment_method_id ) {
+                $payment_method_title_result = $this->get_option_from_db('woocommerce_' . $payment_method_id . '_settings');
+
+                if ( ! isset( $payment_method_title_result[0] ) ) {
+                    return '';
+                }
+
+                $payment_method_values = maybe_unserialize( $payment_method_title_result[0]->option_value );
+
+                if ( ! is_array( $payment_method_values ) ) {
+                    return '';
+                }
+
+                if ( ! isset( $payment_method_values['enabled'], $payment_method_values['title'] ) ) {
+                    return '';
+                }
+
+                if ( $payment_method_values['enabled'] !== 'yes' ) {
+                    return '';
+                }
+
+                return $payment_method_values['title'];
+            }
+
+
             private function get_available_payment_methods() {
                 if ( ! $this->is_accessing_settings() ) {
                     return [];
                 }
 
-                $methods          = [];
-                $wc_gateways      = new WC_Payment_Gateways();
-                $payment_gateways = $wc_gateways->get_available_payment_gateways();
+                $payment_methods_ids_result = $this->get_option_from_db('woocommerce_gateway_order');
 
-                foreach ( $payment_gateways as $gateway_id => $gateway ) {
-                    $methods[ $gateway_id ] = $gateway->get_title();
+                if ( ! isset( $payment_methods_ids_result[0] ) ) {
+                    return [];
                 }
 
-                return $methods;
+                $payment_methods_ids_array = maybe_unserialize( $payment_methods_ids_result[0]->option_value );
+
+                if ( ! is_array( $payment_methods_ids_array ) ) {
+                    return [];
+                }
+
+                $payments_methods_titles = [];
+
+                foreach ( array_flip( $payment_methods_ids_array ) as $payment_method_id ) {
+
+                    if ( ! $payment_method_title = $this->get_payment_method_title( $payment_method_id ) ) {
+                        continue;
+                    }
+
+                    $payments_methods_titles[ $payment_method_id ] = $payment_method_title;
+
+                }
+
+                return $payments_methods_titles;
+
             }
 
             private function check_payment_method_for_calc() {
