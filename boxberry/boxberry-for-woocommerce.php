@@ -2,7 +2,7 @@
 /*
 Plugin Name: Boxberry for WooCommerce
 Description: The plugin allows you to automatically calculate the shipping cost and create Parsel for Boxberry
-Version: 2.21
+Version: 2.22
 Author: Boxberry
 Author URI: Boxberry.ru
 Text Domain: boxberry
@@ -253,7 +253,6 @@ if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', g
                 return $payment_method_values['title'];
             }
 
-
             private function get_available_payment_methods() {
                 if ( ! $this->is_accessing_settings() ) {
                     return [];
@@ -371,14 +370,14 @@ if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', g
                     }
 
                     if ( ( $default_height > 0 && $height > $default_height )
-                        || ( $default_depth > 0 && $depth > $default_depth )
-                        || ( $default_width && $width > $default_width ) ) {
+                         || ( $default_depth > 0 && $depth > $default_depth )
+                         || ( $default_width && $width > $default_width ) ) {
                         $dimensions = false;
                     }
                 }
 
                 if ( (float) $this->get_option( 'min_weight' ) <= $weight
-                    && (float) $this->get_option( 'max_weight' ) >= $weight && $dimensions ) {
+                     && (float) $this->get_option( 'max_weight' ) >= $weight && $dimensions ) {
                     $height = $depth = $width = 0;
 
                     if ( ! is_null( $currentProduct ) ) {
@@ -403,6 +402,13 @@ if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', g
                         return false;
                     }
 
+                    $currentShippingZone = WC_Shipping_Zones::get_zone_matching_package( $package );
+                    $shippingMethodZones = WC_Shipping_Zones::get_zones();
+
+                    if ( ! validateShippingZone( $currentShippingZone->get_id(), $shippingMethodZones, $location->getCountryCode()) ) {
+                        return false;
+                    }
+
                     if ( ! isCodAvailableForCountry( $location->getCountryCode(), $this->payment_after ) ) {
                         return false;
                     }
@@ -419,11 +425,18 @@ if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', g
                         return false;
                     }
 
+                    $zip             = '';
+
+                    if ( isset( $package['destination']['postcode'] ) ) {
+                        $zip = getZipCheck( $client, $package['destination']['postcode'] );
+                    }
+
                     $deliveryCalculation = $client->getDeliveryCalculation();
                     $deliveryCalculation->setWeight( $weight );
                     $deliveryCalculation->setHeight( $height );
                     $deliveryCalculation->setWidth( $width );
                     $deliveryCalculation->setDepth( $depth );
+                    $deliveryCalculation->setZip( $zip );
                     $deliveryCalculation->setBoxSizes();
                     $deliveryCalculation->setRecipientCityId( $location->getCityCode() );
                     $deliveryCalculation->setDeliveryType( $this->self_type ? DeliveryCalculation::PICKUP_DELIVERY_TYPE_ID : DeliveryCalculation::COURIER_DELIVERY_TYPE_ID );
@@ -431,7 +444,7 @@ if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', g
                     $deliveryCalculation->setOrderSum( $totalval );
                     $deliveryCalculation->setUseShopSettings( $surch );
                     $deliveryCalculation->setCmsName( 'wordpress' );
-                    $deliveryCalculation->setVersion( '2.20' );
+                    $deliveryCalculation->setVersion( '2.22' );
                     $deliveryCalculation->setUrl( bxbGetUrl() );
 
                     try {
@@ -535,6 +548,25 @@ if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', g
         }
     }
 
+    function getZipCheck( $client, $zip )
+    {
+        $zipCheckRequest = $client->getZipCheck();
+
+        if ( !empty( trim( $zip ) ) && strlen( $zip ) === 6 && is_numeric( $zip ) ) {
+            try {
+                $zipCheckRequest->setZip( $zip );
+                $zipCheckResponse = $client->execute( $zipCheckRequest );
+
+                if ( $zipCheckResponse->getExpressDelivery() === 1 ) {
+                    return $zip;
+                }
+            } catch ( Exception $e ) {
+                return '';
+            }
+        }
+        return '';
+    }
+
     function bxbGetWeight($product, $id = 0)
     {
         if ($product->is_type('simple')) {
@@ -601,6 +633,35 @@ if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', g
 
         if (!$paymentAfter) {
             return true;
+        }
+
+        return false;
+    }
+
+    function validateShippingZone( $currentShippingZoneId, $shippingMethodZones, $currentCountryCode )
+    {
+        $boxberryCountries = [
+            '860' => 'UZ',
+            '762' => 'TJ',
+            '643' => 'RU',
+            '417' => 'KG',
+            '398' => 'KZ',
+            '112' => 'BY',
+            '051' => 'AM',
+        ];
+
+        foreach ( $shippingMethodZones as $zone ) {
+            if ( $zone['id'] !== $currentShippingZoneId ) {
+                continue;
+            }
+
+            foreach ( $boxberryCountries as $countryCode => $zoneLocationCode ) {
+                foreach ( $zone['zone_locations'] as $zoneLocation ) {
+                    if ( $zoneLocation->code === $zoneLocationCode && $currentCountryCode == $countryCode ) {
+                        return true;
+                    }
+                }
+            }
         }
 
         return false;
@@ -679,10 +740,10 @@ if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', g
                     echo '<p>Код пункта выдачи: <a href="#" data-id="' . esc_attr(
                             $post -> ID
                         ) . '" data-boxberry-open="true" data-boxberry-city="' . esc_attr(
-                            $order -> shipping_city
-                        ) . '">' . esc_attr(
-                            $pvzCode
-                        ) . '</a></p>';
+                             $order -> shipping_city
+                         ) . '">' . esc_attr(
+                             $pvzCode
+                         ) . '</a></p>';
                     echo '<p>Адрес пункта выдачи: ' . esc_html($boxberryAddress) . '</p>';
                 }
             } elseif (isset($trackingNumber) && $trackingNumber !== '') {
@@ -708,18 +769,18 @@ if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', g
                         echo '<p><a href="#" data-id="' . esc_attr(
                                 $post -> ID
                             ) . '" data-boxberry-open="true" data-boxberry-city="' . esc_attr(
-                                $order -> shipping_state
-                            ) . ' ' . esc_attr($order -> shipping_city) . '">Выберите ПВЗ</a></p>';
+                                 $order -> shipping_state
+                             ) . ' ' . esc_attr($order -> shipping_city) . '">Выберите ПВЗ</a></p>';
                         return;
                     }
 
                     echo '<p>Код пункта выдачи: <a href="#" data-id="' . esc_attr(
                             $post -> ID
                         ) . '" data-boxberry-open="true" data-boxberry-city="' . esc_attr(
-                            $order -> shipping_city
-                        ) . '">' . esc_html(
-                            $pvzCode
-                        ) . '</a></p>';
+                             $order -> shipping_city
+                         ) . '">' . esc_html(
+                             $pvzCode
+                         ) . '</a></p>';
                     echo '<p>Адрес пункта выдачи: ' . esc_html($boxberryAddress) . '</p>';
                 }
                 echo '<p>После нажатия кнопки заказ будет создан в системе Boxberry.</p>';
@@ -786,7 +847,7 @@ if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', g
             $parsel->setSourcePlatform('wordpress');
             $parsel->setOrderId(($shippingData['object']->get_option('order_prefix') ?
                     $shippingData['object']->get_option('order_prefix') . '_' : '')
-                . $order->get_order_number());
+                                . $order->get_order_number());
 
             $parsel->setPrice($order->get_total() - $shippingData['cost']);
             $parsel->setDeliverySum($shippingData['cost']);
@@ -895,6 +956,24 @@ if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', g
                 $location->find( $shippingCity, $shippingState );
                 if ( $location->getError() ) {
                     update_post_meta( $orderId, 'boxberry_error', $location->getError() );
+
+                    return;
+                }
+
+                $package = [
+                    'destination' => [
+                        'country'  => $order->get_shipping_country(),
+                        'state'    => $shippingState,
+                        'postcode' => $postCode,
+                    ],
+                ];
+
+                $currentShippingZone = WC_Shipping_Zones::get_zone_matching_package( $package );
+                $shippingMethodZones = WC_Shipping_Zones::get_zones();
+
+                if ( ! validateShippingZone( $currentShippingZone->get_id(), $shippingMethodZones, $location->getCountryCode() ) ) {
+                    $error = 'Регион текущего метода доставки не соответстует стране передаваемого города получателя.';
+                    update_post_meta( $orderId, 'boxberry_error', $error );
 
                     return;
                 }

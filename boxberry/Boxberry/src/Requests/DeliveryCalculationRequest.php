@@ -11,6 +11,7 @@ class DeliveryCalculationRequest extends Request
         'DeliveryType' => 'deliveryType',
         'OrderSum' => 'orderSum',
         'PaySum' => 'paySum',
+        'Zip' => 'zip',
         'BoxSizes' => 'boxSizes',
         'UseShopSettings' => 'useShopSettings',
         'CmsName' => 'cmsName',
@@ -25,6 +26,7 @@ class DeliveryCalculationRequest extends Request
     protected $deliveryType = '';
     protected $orderSum = 0;
     protected $paySum = 0;
+    protected $zip = '';
     protected $boxSizes = [];
     protected $width = 0;
     protected $height = 0;
@@ -113,6 +115,22 @@ class DeliveryCalculationRequest extends Request
     public function setPaySum($paySum)
     {
         $this->paySum = $paySum;
+    }
+
+    /**
+     * @return string
+     */
+    public function getZip()
+    {
+        return $this->zip;
+    }
+
+    /**
+     * @param string $zip
+     */
+    public function setZip($zip)
+    {
+        $this->zip = $zip;
     }
 
     /**
