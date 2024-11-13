@@ -2,7 +2,7 @@
 /*
 Plugin Name: Boxberry for WooCommerce
 Description: The plugin allows you to automatically calculate the shipping cost and create Parsel for Boxberry
-Version: 2.22
+Version: 2.23
 Author: Boxberry
 Author URI: Boxberry.ru
 Text Domain: boxberry
@@ -370,14 +370,14 @@ if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', g
                     }
 
                     if ( ( $default_height > 0 && $height > $default_height )
-                         || ( $default_depth > 0 && $depth > $default_depth )
-                         || ( $default_width && $width > $default_width ) ) {
+                        || ( $default_depth > 0 && $depth > $default_depth )
+                        || ( $default_width && $width > $default_width ) ) {
                         $dimensions = false;
                     }
                 }
 
                 if ( (float) $this->get_option( 'min_weight' ) <= $weight
-                     && (float) $this->get_option( 'max_weight' ) >= $weight && $dimensions ) {
+                    && (float) $this->get_option( 'max_weight' ) >= $weight && $dimensions ) {
                     $height = $depth = $width = 0;
 
                     if ( ! is_null( $currentProduct ) ) {
@@ -444,7 +444,7 @@ if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', g
                     $deliveryCalculation->setOrderSum( $totalval );
                     $deliveryCalculation->setUseShopSettings( $surch );
                     $deliveryCalculation->setCmsName( 'wordpress' );
-                    $deliveryCalculation->setVersion( '2.22' );
+                    $deliveryCalculation->setVersion( '2.23' );
                     $deliveryCalculation->setUrl( bxbGetUrl() );
 
                     try {
@@ -655,6 +655,10 @@ if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', g
                 continue;
             }
 
+            if ( empty( $zone['zone_locations'] ) ) {
+                return true;
+            }
+
             foreach ( $boxberryCountries as $countryCode => $zoneLocationCode ) {
                 foreach ( $zone['zone_locations'] as $zoneLocation ) {
                     if ( $zoneLocation->code === $zoneLocationCode && $currentCountryCode == $countryCode ) {
@@ -740,10 +744,10 @@ if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', g
                     echo '<p>Код пункта выдачи: <a href="#" data-id="' . esc_attr(
                             $post -> ID
                         ) . '" data-boxberry-open="true" data-boxberry-city="' . esc_attr(
-                             $order -> shipping_city
-                         ) . '">' . esc_attr(
-                             $pvzCode
-                         ) . '</a></p>';
+                            $order -> shipping_city
+                        ) . '">' . esc_attr(
+                            $pvzCode
+                        ) . '</a></p>';
                     echo '<p>Адрес пункта выдачи: ' . esc_html($boxberryAddress) . '</p>';
                 }
             } elseif (isset($trackingNumber) && $trackingNumber !== '') {
@@ -769,18 +773,18 @@ if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', g
                         echo '<p><a href="#" data-id="' . esc_attr(
                                 $post -> ID
                             ) . '" data-boxberry-open="true" data-boxberry-city="' . esc_attr(
-                                 $order -> shipping_state
-                             ) . ' ' . esc_attr($order -> shipping_city) . '">Выберите ПВЗ</a></p>';
+                                $order -> shipping_state
+                            ) . ' ' . esc_attr($order -> shipping_city) . '">Выберите ПВЗ</a></p>';
                         return;
                     }
 
                     echo '<p>Код пункта выдачи: <a href="#" data-id="' . esc_attr(
                             $post -> ID
                         ) . '" data-boxberry-open="true" data-boxberry-city="' . esc_attr(
-                             $order -> shipping_city
-                         ) . '">' . esc_html(
-                             $pvzCode
-                         ) . '</a></p>';
+                            $order -> shipping_city
+                        ) . '">' . esc_html(
+                            $pvzCode
+                        ) . '</a></p>';
                     echo '<p>Адрес пункта выдачи: ' . esc_html($boxberryAddress) . '</p>';
                 }
                 echo '<p>После нажатия кнопки заказ будет создан в системе Boxberry.</p>';
@@ -847,7 +851,7 @@ if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', g
             $parsel->setSourcePlatform('wordpress');
             $parsel->setOrderId(($shippingData['object']->get_option('order_prefix') ?
                     $shippingData['object']->get_option('order_prefix') . '_' : '')
-                                . $order->get_order_number());
+                . $order->get_order_number());
 
             $parsel->setPrice($order->get_total() - $shippingData['cost']);
             $parsel->setDeliverySum($shippingData['cost']);

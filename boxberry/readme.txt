@@ -1,7 +1,7 @@
 === Интеграция со службой доставки Boxberry ===
 
 Tags: доставка, модуль, плагин, boxberry, woocommerce
-Stable tag: 2.22
+Stable tag: 2.23
 Tested up to: 6.6.2
 Contributors: akazanstev, mrswed, vkozachkov
 Requires at least: 4.9
@@ -31,6 +31,11 @@ License URI: http://www.gnu.org/licenses/gpl-2.0.html
 [Техническая поддержка](https://sd.boxberry.ru)
 
 == Changelog ==
+
+= 2.23 =
+
+* Исправлена валидация зоны доставки способа доставки в оформлении заказа при отсутствии выбранных регионов
+* В стиль кнопки открытия виджета добавлен приоритет наложения выше других элементов
 
 = 2.22 =
 
