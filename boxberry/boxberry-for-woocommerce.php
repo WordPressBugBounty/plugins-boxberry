@@ -2,7 +2,7 @@
 /*
 Plugin Name: Boxberry for WooCommerce
 Description: The plugin allows you to automatically calculate the shipping cost and create Parsel for Boxberry
-Version: 2.23
+Version: 2.24
 Author: Boxberry
 Author URI: Boxberry.ru
 Text Domain: boxberry
@@ -301,6 +301,13 @@ if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', g
                 return false;
             }
 
+            private function extract_city_and_state( $location_string ) {
+                $parts = explode( ',', $location_string );
+                $city = isset( $parts[0] ) ? trim( preg_replace( '/^\S+\s+/', '', $parts[0] ) ) : '';
+                $state = isset( $parts[1] ) ? trim( str_ireplace( [ 'область', 'край', 'республика' ], '', $parts[1] ) ) : '';
+                return [ 'city' => $city, 'state' => $state ];
+            }
+
             final public function calculate_shipping( $package = array() ) {
                 if ( ! $this->check_payment_method_for_calc() ) {
                     return false;
@@ -394,11 +401,18 @@ if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', g
                     $client->setApiUrl( $this->api_url );
                     $client->setKey( $this->key );
 
+                    $location_data = $this->extract_city_and_state( $package['destination']['city'] );
+                    $city  = $location_data['city'] ?: $package['destination']['city'];
+                    $state = $location_data['state'] ?: $package['destination']['state'];
+
                     $location = new LocationFinder();
                     $location->setClient( $client );
-                    $location->find( $package['destination']['city'], $package['destination']['state'] );
+                    $location->find( $city, $state );
 
                     if ( $location->getError() ) {
+                        error_log( 'Boxberry LocationFinder Error: ' . $location->getError() );
+                        error_log( 'City: ' . $city );
+                        error_log( 'State: ' . $state );
                         return false;
                     }
 
@@ -444,7 +458,7 @@ if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', g
                     $deliveryCalculation->setOrderSum( $totalval );
                     $deliveryCalculation->setUseShopSettings( $surch );
                     $deliveryCalculation->setCmsName( 'wordpress' );
-                    $deliveryCalculation->setVersion( '2.23' );
+                    $deliveryCalculation->setVersion( '2.24' );
                     $deliveryCalculation->setUrl( bxbGetUrl() );
 
                     try {

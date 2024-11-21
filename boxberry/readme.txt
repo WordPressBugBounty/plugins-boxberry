@@ -1,8 +1,8 @@
 === Интеграция со службой доставки Boxberry ===
 
 Tags: доставка, модуль, плагин, boxberry, woocommerce
-Stable tag: 2.23
-Tested up to: 6.6.2
+Stable tag: 2.24
+Tested up to: 6.7
 Contributors: akazanstev, mrswed, vkozachkov
 Requires at least: 4.9
 Requires PHP: 5.4
@@ -31,6 +31,10 @@ License URI: http://www.gnu.org/licenses/gpl-2.0.html
 [Техническая поддержка](https://sd.boxberry.ru)
 
 == Changelog ==
+
+= 2.24 =
+
+* Добавлена обработка поля city при использовании плагина автозаполнения местоположения
 
 = 2.23 =
 
