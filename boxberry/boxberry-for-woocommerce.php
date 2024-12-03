@@ -2,7 +2,7 @@
 /*
 Plugin Name: Boxberry for WooCommerce
 Description: The plugin allows you to automatically calculate the shipping cost and create Parsel for Boxberry
-Version: 2.24
+Version: 2.25
 Author: Boxberry
 Author URI: Boxberry.ru
 Text Domain: boxberry
@@ -301,10 +301,27 @@ if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', g
                 return false;
             }
 
-            private function extract_city_and_state( $location_string ) {
+            private function extract_city_and_state( $location_string )
+            {
                 $parts = explode( ',', $location_string );
-                $city = isset( $parts[0] ) ? trim( preg_replace( '/^\S+\s+/', '', $parts[0] ) ) : '';
-                $state = isset( $parts[1] ) ? trim( str_ireplace( [ 'область', 'край', 'республика' ], '', $parts[1] ) ) : '';
+                $city  = isset( $parts[0] ) ? trim( preg_replace( '/^(город|г\.?|село|деревня|д\.?)\s+/iu', '', $parts[0] ) ) : '';
+                $state = '';
+                if ( isset( $parts[1] ) && isset( $parts[2] ) ) {
+                    $state = trim( $parts[2] );
+                } elseif ( isset( $parts[1] ) ) {
+                    $state = trim( $parts[1] );
+                }
+
+                $state = preg_replace( '/\bрайон\b/iu', '', $state );
+                $state = trim( str_ireplace(
+                    [
+                        'область',
+                        'обл',
+                        'край',
+                        'республика',
+                        'респ'
+                    ], '', $state ) );
+
                 return [ 'city' => $city, 'state' => $state ];
             }
 
@@ -401,9 +418,14 @@ if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', g
                     $client->setApiUrl( $this->api_url );
                     $client->setKey( $this->key );
 
-                    $location_data = $this->extract_city_and_state( $package['destination']['city'] );
-                    $city  = $location_data['city'] ?: $package['destination']['city'];
-                    $state = $location_data['state'] ?: $package['destination']['state'];
+                    $city  = $package['destination']['city'];
+                    $state = $package['destination']['state'];
+
+                    if ( empty( $package['destination']['state'] ) ) {
+                        $location_data = $this->extract_city_and_state( $package['destination']['city'] );
+                        $city          = $location_data['city'];
+                        $state         = $location_data['state'];
+                    }
 
                     $location = new LocationFinder();
                     $location->setClient( $client );
@@ -458,7 +480,7 @@ if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', g
                     $deliveryCalculation->setOrderSum( $totalval );
                     $deliveryCalculation->setUseShopSettings( $surch );
                     $deliveryCalculation->setCmsName( 'wordpress' );
-                    $deliveryCalculation->setVersion( '2.24' );
+                    $deliveryCalculation->setVersion( '2.25' );
                     $deliveryCalculation->setUrl( bxbGetUrl() );
 
                     try {
