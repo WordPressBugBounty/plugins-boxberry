@@ -1,7 +1,7 @@
 === Интеграция со службой доставки Boxberry ===
 
 Tags: доставка, модуль, плагин, boxberry, woocommerce
-Stable tag: 2.25
+Stable tag: 2.26
 Tested up to: 6.7
 Contributors: akazanstev, mrswed, vkozachkov
 Requires at least: 4.9
@@ -31,6 +31,10 @@ License URI: http://www.gnu.org/licenses/gpl-2.0.html
 [Техническая поддержка](https://sd.boxberry.ru)
 
 == Changelog ==
+
+= 2.26 =
+
+* Добавлена автоматическая передача ставки НДС товаров при создании заказа в ЛК
 
 = 2.25 =
 

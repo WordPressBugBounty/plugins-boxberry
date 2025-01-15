@@ -2,7 +2,7 @@
 /*
 Plugin Name: Boxberry for WooCommerce
 Description: The plugin allows you to automatically calculate the shipping cost and create Parsel for Boxberry
-Version: 2.25
+Version: 2.26
 Author: Boxberry
 Author URI: Boxberry.ru
 Text Domain: boxberry
@@ -480,7 +480,7 @@ if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', g
                     $deliveryCalculation->setOrderSum( $totalval );
                     $deliveryCalculation->setUseShopSettings( $surch );
                     $deliveryCalculation->setCmsName( 'wordpress' );
-                    $deliveryCalculation->setVersion( '2.25' );
+                    $deliveryCalculation->setVersion( '2.26' );
                     $deliveryCalculation->setUrl( bxbGetUrl() );
 
                     try {
@@ -947,6 +947,12 @@ if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', g
                 $item->setId($id);
 
                 $item->setName($orderItem['name']);
+
+                if ( get_option( 'woocommerce_calc_taxes' ) === 'yes' ) {
+                    $itemTaxRate = get_tax_rate_for_product( $product );
+                    $item->setNds( $itemTaxRate );
+                }
+
                 // $item->setPrice($product->get_price());
                 $item->setPrice((float)$orderItem['total'] / $orderItem['qty']);
                 $item->setQuantity($orderItem['qty']);
@@ -1121,6 +1127,23 @@ if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', g
 
         return [];
 
+    }
+
+    function get_tax_rate_for_product( $product ) {
+        $taxStatus = $product->get_tax_status();
+
+        if ( $taxStatus !== 'none' ) {
+            $taxClass = $product->get_tax_class();
+            $taxRates = WC_Tax::get_rates( $taxClass );
+
+            if ( !empty( $taxRates ) ) {
+                foreach ( $taxRates as $rate ) {
+                    return $rate['rate'];
+                }
+            }
+        }
+
+        return null;
     }
 
     function boxberry_woocommerce_after_shipping_rate( $method ) {
