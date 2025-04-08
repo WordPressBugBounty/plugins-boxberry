@@ -1,8 +1,8 @@
 === Интеграция со службой доставки Boxberry ===
 
 Tags: доставка, модуль, плагин, boxberry, woocommerce
-Stable tag: 2.26
-Tested up to: 6.7
+Stable tag: 2.27
+Tested up to: 6.7.2
 Contributors: akazanstev, mrswed, vkozachkov
 Requires at least: 4.9
 Requires PHP: 5.4
@@ -31,6 +31,13 @@ License URI: http://www.gnu.org/licenses/gpl-2.0.html
 [Техническая поддержка](https://sd.boxberry.ru)
 
 == Changelog ==
+
+= 2.27 =
+
+* Исправлен конфликт при работе с плагином Memberships
+* Добавлено игнорирование виртуальных и скачиваемых товаров в заказе
+* Устранена возможная проблема чтения/записи мета-полей заказа
+* Устранена возможная проблема отображения мета-блока службы доставки внутри заказа
 
 = 2.26 =
 

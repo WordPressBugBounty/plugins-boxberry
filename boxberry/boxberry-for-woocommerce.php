@@ -2,7 +2,7 @@
 /*
 Plugin Name: Boxberry for WooCommerce
 Description: The plugin allows you to automatically calculate the shipping cost and create Parsel for Boxberry
-Version: 2.26
+Version: 2.27
 Author: Boxberry
 Author URI: Boxberry.ru
 Text Domain: boxberry
@@ -20,117 +20,119 @@ use Boxberry\Models\Status;
 use Boxberry\Requests\ListStatusesRequest;
 use Boxberry\Requests\ParselCreateRequest;
 
-error_reporting(~E_NOTICE && ~E_STRICT);
+error_reporting( ~E_NOTICE && ~E_STRICT );
 add_action( 'plugins_loaded', 'boxberry_load_textdomain' );
-function boxberry_load_textdomain() {
+function boxberry_load_textdomain()
+{
     load_plugin_textdomain( 'boxberry', false, plugin_basename( dirname( __FILE__ ) ) . '/lang' );
 }
-if ( !defined( 'ABSPATH' ) ) {
+
+if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', get_option( 'active_plugins' ) ) ) ) {
     require __DIR__ . '/Boxberry/src/autoload.php';
-    function boxberry_shipping_method_init() {
+    function boxberry_shipping_method_init()
+    {
         class WC_Boxberry_Parent_Method extends WC_Shipping_Method {
-
-            public function __construct( $instance_id = 0 ) {
-
+            public function __construct( $instance_id = 0 )
+            {
                 parent::__construct();
-                $this->instance_id           = absint( $instance_id );
-                $this->supports              = array(
+                $this->instance_id = absint( $instance_id );
+                $this->supports    = array(
                     'shipping-zones',
                     'instance-settings'
                 );
 
-                $params = array (
-                    'title'          => array (
-                        'title'   => __('Title', 'boxberry'),
+                $params = array(
+                    'title'                               => array(
+                        'title'   => __( 'Title', 'boxberry' ),
                         'type'    => 'text',
-                        'default' => $this -> method_title,
+                        'default' => $this->method_title,
                     ),
-                    'key'            => array (
-                        'title'             => __('Boxberry API Key', 'boxberry'),
+                    'key'                                 => array(
+                        'title'             => __( 'Boxberry API Key', 'boxberry' ),
                         'type'              => 'text',
-                        'custom_attributes' => array (
+                        'custom_attributes' => array(
                             'required' => true
                         )
                     ),
-                    'api_url'        => array (
-                        'title'             => __('Boxberry API Url', 'boxberry'),
+                    'api_url'                             => array(
+                        'title'             => __( 'Boxberry API Url', 'boxberry' ),
                         'description'       => '',
                         'type'              => 'text',
                         'default'           => 'https://api.boxberry.ru/json.php',
-                        'custom_attributes' => array (
+                        'custom_attributes' => array(
                             'readonly' => true,
                             'required' => true
                         )
                     ),
-                    'wiidget_url'    => array (
-                        'title'             => __('Boxberry Widget Url', 'boxberry'),
+                    'wiidget_url'                         => array(
+                        'title'             => __( 'Boxberry Widget Url', 'boxberry' ),
                         'description'       => '',
                         'type'              => 'text',
                         'default'           => '//points.boxberry.de/js/boxberry.js',
-                        'custom_attributes' => array (
+                        'custom_attributes' => array(
                             'required' => true
                         )
                     ),
-                    'default_weight' => array (
-                        'title'             => __('Default Weight', 'boxberry'),
+                    'default_weight'                      => array(
+                        'title'             => __( 'Default Weight', 'boxberry' ),
                         'type'              => 'text',
                         'default'           => '500',
-                        'custom_attributes' => array (
+                        'custom_attributes' => array(
                             'required' => true
                         )
                     ),
-                    'min_weight'     => array (
-                        'title'             => __('Min Weight', 'boxberry'),
+                    'min_weight'                          => array(
+                        'title'             => __( 'Min Weight', 'boxberry' ),
                         'type'              => 'text',
                         'default'           => '0',
-                        'custom_attributes' => array (
+                        'custom_attributes' => array(
                             'required' => true
                         )
                     ),
-                    'max_weight'     => array (
-                        'title'             => __('Max Weight', 'boxberry'),
+                    'max_weight'                          => array(
+                        'title'             => __( 'Max Weight', 'boxberry' ),
                         'type'              => 'text',
                         'default'           => '31000',
-                        'custom_attributes' => array (
+                        'custom_attributes' => array(
                             'required' => true
                         )
                     ),
-                    'height'         => array (
-                        'title'   => __('Height', 'boxberry'),
+                    'height'                              => array(
+                        'title'   => __( 'Height', 'boxberry' ),
                         'type'    => 'text',
                         'default' => '',
                     ),
-                    'depth'          => array (
-                        'title'   => __('Depth', 'boxberry'),
+                    'depth'                               => array(
+                        'title'   => __( 'Depth', 'boxberry' ),
                         'type'    => 'text',
                         'default' => '',
                     ),
-                    'width'          => array (
-                        'title'   => __('Width', 'boxberry'),
+                    'width'                               => array(
+                        'title'   => __( 'Width', 'boxberry' ),
                         'type'    => 'text',
                         'default' => '',
                     ),
-                    'parselcreate_on_status' => array (
-                        'title'    => __('ps_on_status_title', 'boxberry'),
-                        'desc_tip' => __('ps_on_status_desc', 'boxberry'),
+                    'parselcreate_on_status'              => array(
+                        'title'    => __( 'ps_on_status_title', 'boxberry' ),
+                        'desc_tip' => __( 'ps_on_status_desc', 'boxberry' ),
                         'type'     => 'select',
                         'class'    => 'wc-enhanced-select',
                         'default'  => 'none',
-                        'options'  => ['none' => __('ps_on_status_none', 'boxberry')] + wc_get_order_statuses()
+                        'options'  => [ 'none' => __( 'ps_on_status_none', 'boxberry' ) ] + wc_get_order_statuses()
                     ),
-                    'order_status_send' => array(
-                        'title'    => __('order_status_send_title', 'boxberry'),
-                        'desc_tip' => __('order_status_send_desc', 'boxberry'),
+                    'order_status_send'                   => array(
+                        'title'    => __( 'order_status_send_title', 'boxberry' ),
+                        'desc_tip' => __( 'order_status_send_desc', 'boxberry' ),
                         'type'     => 'select',
                         'class'    => 'wc-enhanced-select',
                         'default'  => 'none',
-                        'options' => ['none' => __('order_status_send_none', 'boxberry')] + wc_get_order_statuses()
+                        'options'  => [ 'none' => __( 'order_status_send_none', 'boxberry' ) ] + wc_get_order_statuses()
                     ),
-                    'surch'          => array (
-                        'title'   => __('surch', 'boxberry'),
+                    'surch'                               => array(
+                        'title'   => __( 'surch', 'boxberry' ),
                         'type'    => 'select',
                         'class'   => 'wc-enhanced-select',
                         'options' => [
@@ -138,8 +140,8 @@ if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', g
                             0 => 'Да',
                         ]
                     ),
-                    'autoact'        => array (
-                        'title'   => __('autoact', 'boxberry'),
+                    'autoact'                             => array(
+                        'title'   => __( 'autoact', 'boxberry' ),
                         'type'    => 'select',
                         'class'   => 'wc-enhanced-select',
                         'options' => [
@@ -147,8 +149,8 @@ if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', g
                             1 => 'Да',
                         ]
                     ),
-                    'bxbbutton' => array (
-                        'title'   => __('bxbbutton', 'boxberry'),
+                    'bxbbutton'                           => array(
+                        'title'   => __( 'bxbbutton', 'boxberry' ),
                         'type'    => 'select',
                         'class'   => 'wc-enhanced-select',
                         'options' => [
@@ -156,18 +158,18 @@ if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', g
                             1 => 'Да',
                         ]
                     ),
-                    'order_prefix'      => array(
-                        'title'    => __('order_prefix_title', 'boxberry'),
-                        'desc_tip' => __('order_prefix_desc', 'boxberry'),
+                    'order_prefix'                        => array(
+                        'title'    => __( 'order_prefix_title', 'boxberry' ),
+                        'desc_tip' => __( 'order_prefix_desc', 'boxberry' ),
                         'type'     => 'text',
                         'default'  => 'wp'
                     ),
-                    'check_zip'      => array(
-                        'title'    => __('check_zip', 'boxberry'),
-                        'desc_tip' => __('check_zip_desc', 'boxberry'),
-                        'type'    => 'select',
-                        'class'   => 'wc-enhanced-select',
-                        'options' => [
+                    'check_zip'                           => array(
+                        'title'    => __( 'check_zip', 'boxberry' ),
+                        'desc_tip' => __( 'check_zip_desc', 'boxberry' ),
+                        'type'     => 'select',
+                        'class'    => 'wc-enhanced-select',
+                        'options'  => [
                             0 => 'Нет',
                             1 => 'Да'
                         ]
@@ -187,24 +189,28 @@ if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', g
                     )
                 );
 
-                if (is_array($this->instance_form_fields)) {
-                    $this->instance_form_fields = array_merge($this->instance_form_fields, $params);
+                if ( is_array( $this->instance_form_fields ) ) {
+                    $this->instance_form_fields = array_merge( $this->instance_form_fields, $params );
                 } else {
-                    $this->instance_form_fields  = $params;
+                    $this->instance_form_fields = $params;
                 }
 
-                $this -> key          = $this -> get_option('key');
-                $this -> title        = $this -> get_option('title');
-                $this -> from         = $this -> get_option('from');
-                $this -> addcost      = $this -> get_option('addcost');
-                $this -> api_url      = $this -> get_option('api_url');
-                $this -> widget_url   = $this -> get_option('widget_url');
-                $this -> ps_on_status = $this -> get_option('parselcreate_on_status');
+                $this->key          = $this->get_option( 'key' );
+                $this->title        = $this->get_option( 'title' );
+                $this->from         = $this->get_option( 'from' );
+                $this->addcost      = $this->get_option( 'addcost' );
+                $this->api_url      = $this->get_option( 'api_url' );
+                $this->widget_url   = $this->get_option( 'widget_url' );
+                $this->ps_on_status = $this->get_option( 'parselcreate_on_status' );
 
-                add_action('woocommerce_update_options_shipping_' . $this->id, array($this, 'process_admin_options'));
+                add_action( 'woocommerce_update_options_shipping_' . $this->id, array(
+                    $this,
+                    'process_admin_options'
+                ) );
             }
 
-            private function is_accessing_settings() {
+            private function is_accessing_settings()
+            {
                 if ( is_admin() ) {
                     if ( ! isset( $_REQUEST['page'] ) || 'wc-settings' !== $_REQUEST['page'] ) {
                         return false;
@@ -222,15 +228,17 @@ if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', g
                 return false;
             }
 
-            private function get_option_from_db( $args ) {
+            private function get_option_from_db( $args )
+            {
                 global $wpdb;
                 $query = "SELECT * FROM {$wpdb->prefix}options WHERE option_name = %s LIMIT 1";
 
                 return $wpdb->get_results( $wpdb->prepare( $query, $args ) );
             }
 
-            private function get_payment_method_title( $payment_method_id ) {
-                $payment_method_title_result = $this->get_option_from_db('woocommerce_' . $payment_method_id . '_settings');
+            private function get_payment_method_title( $payment_method_id )
+            {
+                $payment_method_title_result = $this->get_option_from_db( 'woocommerce_' . $payment_method_id . '_settings' );
 
                 if ( ! isset( $payment_method_title_result[0] ) ) {
                     return '';
@@ -253,12 +261,13 @@ if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', g
                 return $payment_method_values['title'];
             }
 
-            private function get_available_payment_methods() {
+            private function get_available_payment_methods()
+            {
                 if ( ! $this->is_accessing_settings() ) {
                     return [];
                 }
 
-                $payment_methods_ids_result = $this->get_option_from_db('woocommerce_gateway_order');
+                $payment_methods_ids_result = $this->get_option_from_db( 'woocommerce_gateway_order' );
 
                 if ( ! isset( $payment_methods_ids_result[0] ) ) {
                     return [];
@@ -286,7 +295,8 @@ if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', g
 
             }
 
-            private function check_payment_method_for_calc() {
+            private function check_payment_method_for_calc()
+            {
                 $chosen_payment_method = WC()->session->get( 'chosen_payment_method' );
                 $option                = $this->get_option( 'enable_for_selected_payment_methods' );
 
@@ -325,7 +335,8 @@ if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', g
                 return [ 'city' => $city, 'state' => $state ];
             }
 
-            final public function calculate_shipping( $package = array() ) {
+            final public function calculate_shipping( $package = array() )
+            {
                 if ( ! $this->check_payment_method_for_calc() ) {
                     return false;
                 }
@@ -373,6 +384,10 @@ if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', g
                 foreach ( $package['contents'] as $cartProduct ) {
                     $product = wc_get_product( $cartProduct['product_id'] );
 
+                    if ( $product->is_virtual() || $product->is_downloadable() ) {
+                        continue;
+                    }
+
                     $itemWeight = bxbGetWeight( $product, $cartProduct['variation_id'] );
                     $itemWeight = (float) $itemWeight * $weightC;
 
@@ -394,14 +409,14 @@ if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', g
                     }
 
                     if ( ( $default_height > 0 && $height > $default_height )
-                        || ( $default_depth > 0 && $depth > $default_depth )
-                        || ( $default_width && $width > $default_width ) ) {
+                         || ( $default_depth > 0 && $depth > $default_depth )
+                         || ( $default_width && $width > $default_width ) ) {
                         $dimensions = false;
                     }
                 }
 
                 if ( (float) $this->get_option( 'min_weight' ) <= $weight
-                    && (float) $this->get_option( 'max_weight' ) >= $weight && $dimensions ) {
+                     && (float) $this->get_option( 'max_weight' ) >= $weight && $dimensions ) {
                     $height = $depth = $width = 0;
 
                     if ( ! is_null( $currentProduct ) ) {
@@ -410,7 +425,16 @@ if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', g
                         $width  = (float) $currentProduct->get_width() * $dimensionC;
                     }
 
-                    $totalval = WC()->cart->get_cart_contents_total() + WC()->cart->get_total_tax();
+                    $totalval = 0;
+
+                    foreach ( WC()->cart->get_cart() as $cart_item ) {
+                        $product = $cart_item['data'];
+
+                        if ( ! $product->is_virtual() || ! $product->is_downloadable() ) {
+                            $totalval += $cart_item['line_total'];
+                            $totalval += $cart_item['line_tax'];
+                        }
+                    }
 
                     $surch = $this->get_option( 'surch' ) !== '' ? (int) $this->get_option( 'surch' ) : 1;
 
@@ -435,13 +459,14 @@ if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', g
                         error_log( 'Boxberry LocationFinder Error: ' . $location->getError() );
                         error_log( 'City: ' . $city );
                         error_log( 'State: ' . $state );
+
                         return false;
                     }
 
                     $currentShippingZone = WC_Shipping_Zones::get_zone_matching_package( $package );
                     $shippingMethodZones = WC_Shipping_Zones::get_zones();
 
-                    if ( ! validateShippingZone( $currentShippingZone->get_id(), $shippingMethodZones, $location->getCountryCode()) ) {
+                    if ( ! validateShippingZone( $currentShippingZone->get_id(), $shippingMethodZones, $location->getCountryCode() ) ) {
                         return false;
                     }
 
@@ -461,7 +486,7 @@ if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', g
                         return false;
                     }
 
-                    $zip             = '';
+                    $zip = '';
 
                     if ( isset( $package['destination']['postcode'] ) ) {
                         $zip = getZipCheck( $client, $package['destination']['postcode'] );
@@ -480,7 +505,7 @@ if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', g
                     $deliveryCalculation->setOrderSum( $totalval );
                     $deliveryCalculation->setUseShopSettings( $surch );
                     $deliveryCalculation->setCmsName( 'wordpress' );
-                    $deliveryCalculation->setVersion( '2.26' );
+                    $deliveryCalculation->setVersion( '2.27' );
                     $deliveryCalculation->setUrl( bxbGetUrl() );
 
                     try {
@@ -528,58 +553,56 @@ if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', g
         }
 
         class WC_Boxberry_Self_Method extends WC_Boxberry_Parent_Method {
-
-            public function __construct( $instance_id = 0 ) {
-                $this->id                    = 'boxberry_self';
-                $this->method_title          = __( 'Boxberry Self', 'boxberry' );
-                $this->instance_form_fields = array(
-
-                );
-                $this->self_type = true;
-                $this->payment_after = false;
+            public function __construct( $instance_id = 0 )
+            {
+                $this->id                   = 'boxberry_self';
+                $this->method_title         = __( 'Boxberry Self', 'boxberry' );
+                $this->instance_form_fields = array();
+                $this->self_type            = true;
+                $this->payment_after        = false;
                 parent::__construct( $instance_id );
                 $this->default_weight = $this->get_option( 'default_weight' );
                 $this->key            = $this->get_option( 'key' );
             }
         }
+
         class WC_Boxberry_SelfAfter_Method extends WC_Boxberry_Parent_Method {
-            public function __construct( $instance_id = 0 ) {
-                $this->id                    = 'boxberry_self_after';
-                $this->method_title          = __( 'Boxberry Self Payment After', 'boxberry' );
-                $this->instance_form_fields = array(
-
-                );
-                $this->self_type = true;
-                $this->payment_after = true;
+            public function __construct( $instance_id = 0 )
+            {
+                $this->id                   = 'boxberry_self_after';
+                $this->method_title         = __( 'Boxberry Self Payment After', 'boxberry' );
+                $this->instance_form_fields = array();
+                $this->self_type            = true;
+                $this->payment_after        = true;
                 parent::__construct( $instance_id );
-                $this->default_weight   		  = $this->get_option( 'default_weight' );
+                $this->default_weight = $this->get_option( 'default_weight' );
                 $this->key            = $this->get_option( 'key' );
             }
         }
+
         class WC_Boxberry_Courier_Method extends WC_Boxberry_Parent_Method {
-            public function __construct( $instance_id = 0 ) {
-                $this->id                    = 'boxberry_courier';
-                $this->method_title          = __( 'Boxberry Courier', 'boxberry' );
-                $this->instance_form_fields = array(
-
-                );
-                $this->self_type = false;
-                $this->payment_after = false;
+            public function __construct( $instance_id = 0 )
+            {
+                $this->id                   = 'boxberry_courier';
+                $this->method_title         = __( 'Boxberry Courier', 'boxberry' );
+                $this->instance_form_fields = array();
+                $this->self_type            = false;
+                $this->payment_after        = false;
                 parent::__construct( $instance_id );
-                $this->key            = $this->get_option( 'key' );
+                $this->key = $this->get_option( 'key' );
             }
         }
-        class WC_Boxberry_CourierAfter_Method extends WC_Boxberry_Parent_Method {
-            public function __construct( $instance_id = 0 ) {
-                $this->id                    = 'boxberry_courier_after';
-                $this->method_title          = __( 'Boxberry Courier Payment After', 'boxberry' );
-                $this->instance_form_fields = array(
 
-                );
-                $this->self_type = false;
-                $this->payment_after = true;
+        class WC_Boxberry_CourierAfter_Method extends WC_Boxberry_Parent_Method {
+            public function __construct( $instance_id = 0 )
+            {
+                $this->id                   = 'boxberry_courier_after';
+                $this->method_title         = __( 'Boxberry Courier Payment After', 'boxberry' );
+                $this->instance_form_fields = array();
+                $this->self_type            = false;
+                $this->payment_after        = true;
                 parent::__construct( $instance_id );
-                $this->key            = $this->get_option( 'key' );
+                $this->key = $this->get_option( 'key' );
             }
         }
     }
@@ -588,7 +611,7 @@ if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', g
     {
         $zipCheckRequest = $client->getZipCheck();
 
-        if ( !empty( trim( $zip ) ) && strlen( $zip ) === 6 && is_numeric( $zip ) ) {
+        if ( ! empty( trim( $zip ) ) && strlen( $zip ) === 6 && is_numeric( $zip ) ) {
             try {
                 $zipCheckRequest->setZip( $zip );
                 $zipCheckResponse = $client->execute( $zipCheckRequest );
@@ -600,20 +623,21 @@ if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', g
                 return '';
             }
         }
+
         return '';
     }
 
-    function bxbGetWeight($product, $id = 0)
+    function bxbGetWeight( $product, $id = 0 )
     {
-        if ($product->is_type('simple')) {
-            return (float)$product->get_weight();
+        if ( $product->is_type( 'simple' ) ) {
+            return (float) $product->get_weight();
         }
 
-        if ($product->is_type('variable')) {
-            foreach ($product->get_visible_children() as $variationId) {
-                $variation = wc_get_product($variationId);
-                if ($id === $variation->get_id()) {
-                    return (float)$variation->get_weight();
+        if ( $product->is_type( 'variable' ) ) {
+            foreach ( $product->get_visible_children() as $variationId ) {
+                $variation = wc_get_product( $variationId );
+                if ( $id === $variation->get_id() ) {
+                    return (float) $variation->get_weight();
                 }
             }
         }
@@ -621,53 +645,73 @@ if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', g
 
     function bxbGetUrl()
     {
-        return str_replace(['http://', 'https://'], '', get_site_url());
+        return str_replace( [ 'http://', 'https://' ], '', get_site_url() );
     }
 
     add_action( 'woocommerce_shipping_init', 'boxberry_shipping_method_init' );
 
-    function boxberry_shipping_method( $methods ) {
-        $methods['boxberry_self'] = 'WC_Boxberry_Self_Method';
-        $methods['boxberry_courier'] = 'WC_Boxberry_Courier_Method';
-        $methods['boxberry_self_after'] = 'WC_Boxberry_SelfAfter_Method';
+    function boxberry_shipping_method( $methods )
+    {
+        $methods['boxberry_self']          = 'WC_Boxberry_Self_Method';
+        $methods['boxberry_courier']       = 'WC_Boxberry_Courier_Method';
+        $methods['boxberry_self_after']    = 'WC_Boxberry_SelfAfter_Method';
         $methods['boxberry_courier_after'] = 'WC_Boxberry_CourierAfter_Method';
+
         return $methods;
     }
 
     add_filter( 'woocommerce_shipping_methods', 'boxberry_shipping_method' );
 
-    function boxberry_add_meta_tracking_code_box($post_type, $post)
+    function boxberry_add_meta_tracking_code_box( $post_type, $post )
     {
-        if (strpos(get_post_status($post), 'wc') !== false) {
-            $order = wc_get_order($post);
-            $shippingData = bxbGetShippingData($order);
-
-            if (@strpos($shippingData['method_id'], 'boxberry') === false) {
-                return;
-            }
-
-            add_meta_box('boxberry_meta_tracking_code', __($shippingData['title'], 'boxberry'), 'boxberry_tracking_code', 'shop_order', 'side', 'default');
+        if (
+            strpos( $post_type, 'shop_order' ) === false &&
+            strpos( $post_type, 'wc-order' ) === false &&
+            strpos( $post_type, 'wc' ) === false
+        ) {
+            return;
         }
+
+        $order = wc_get_order( $post->ID );
+        if ( ! $order ) {
+            return;
+        }
+
+        $shippingData = bxbGetShippingData( $order );
+        if ( empty( $shippingData ) || strpos( $shippingData['method_id'], 'boxberry' ) === false ) {
+            return;
+        }
+
+        add_meta_box(
+            'boxberry_meta_tracking_code',
+            __( $shippingData['title'], 'boxberry' ),
+            'boxberry_tracking_code',
+            $post_type,
+            'side',
+            'core'
+        );
     }
 
-    add_action('woocommerce_checkout_update_order_review', 'action_woocommerce_checkout_update_order_review', 10, 1);
+    add_action( 'add_meta_boxes', 'boxberry_add_meta_tracking_code_box', 10, 2 );
 
-    function action_woocommerce_checkout_update_order_review($postedData)
+    function action_woocommerce_checkout_update_order_review( $postedData )
     {
-        $packages = WC() -> cart -> get_shipping_packages();
-        foreach ($packages as $packageKey => $package) {
+        $packages = WC()->cart->get_shipping_packages();
+        foreach ( $packages as $packageKey => $package ) {
             $sessionKey = 'shipping_for_package_' . $packageKey;
-            WC() -> session -> __unset($sessionKey);
+            WC()->session->__unset( $sessionKey );
         }
     }
 
-    function isCodAvailableForCountry($countryCode, $paymentAfter)
+    add_action( 'woocommerce_checkout_update_order_review', 'action_woocommerce_checkout_update_order_review', 10, 1 );
+
+    function isCodAvailableForCountry( $countryCode, $paymentAfter )
     {
-        if ($countryCode === '643' || $countryCode === '398'){
+        if ( $countryCode === '643' || $countryCode === '398' ) {
             return true;
         }
 
-        if (!$paymentAfter) {
+        if ( ! $paymentAfter ) {
             return true;
         }
 
@@ -707,28 +751,28 @@ if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', g
         return false;
     }
 
-    function bxbGetLastStatusInOrder($data)
+    function bxbGetLastStatusInOrder( $data )
     {
         $listStatuses = $data['client']->getListStatuses();
-        $listStatuses->setImId($data['track']);
+        $listStatuses->setImId( $data['track'] );
         try {
-            $answer = $data['client']->execute($listStatuses);
-            if ($answer->valid()) {
+            $answer = $data['client']->execute( $listStatuses );
+            if ( $answer->valid() ) {
                 $offset = $answer->count() - 1;
-                if ($answer->offsetGet($offset) !== null) {
+                if ( $answer->offsetGet( $offset ) !== null ) {
                     return '<div>
                                 <ul class="order_notes">
                                     <li class="note system-note">
                                         <div class="note_content">
-                                            <p>' . esc_html($answer->offsetGet($offset)->getName()) . '</p>
+                                            <p>' . esc_html( $answer->offsetGet( $offset )->getName() ) . '</p>
                                         </div>
-                                            <p class="meta"><abbr class="exact-date">' . esc_html($answer->offsetGet($offset)->getDate()) . '</abbr></p>
+                                            <p class="meta"><abbr class="exact-date">' . esc_html( $answer->offsetGet( $offset )->getDate() ) . '</abbr></p>
                                     </li>
                                 </ul>
                             </div>';
                 }
             }
-        } catch (Exception $e) {
+        } catch ( Exception $e ) {
             return '<div>
                         <ul class="order_notes">
                             <li class="note">
@@ -741,259 +785,265 @@ if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', g
         }
     }
 
-    add_action('add_meta_boxes', 'boxberry_add_meta_tracking_code_box', 10, 2);
+    function boxberry_tracking_code( $post )
+    {
+        $order        = wc_get_order( $post );
+        $shippingData = bxbGetShippingData( $order );
 
-    function boxberry_tracking_code($post) {
-
-        $order = wc_get_order($post);
-
-        $shippingData = bxbGetShippingData($order);
-
-        if (isset($shippingData['object'])) {
-            $trackingNumber = get_post_meta($post->ID, 'boxberry_tracking_number', true);
-            $trackingSiteLink = get_post_meta($post->ID, 'boxberry_tracking_site_link', true);
-            $labelLink = get_post_meta($post->ID, 'boxberry_link', true);
-            $actLink = get_post_meta($post->ID, 'boxberry_act_link', true);
-            $errorText = get_post_meta($post->ID, 'boxberry_error', true);
-
-            $pvzCode = get_post_meta($post->ID, 'boxberry_code', true);
-            $boxberryAddress = get_post_meta($post->ID, 'boxberry_address', true);
-            $key = $shippingData['object']->get_option('key');
-            $apiUrl = $shippingData['object']->get_option('api_url');
+        if ( isset( $shippingData['object'] ) ) {
+            $trackingNumber   = $order->get_meta( 'boxberry_tracking_number' );
+            $trackingSiteLink = $order->get_meta( 'boxberry_tracking_site_link' );
+            $labelLink        = $order->get_meta( 'boxberry_link' );
+            $actLink          = $order->get_meta( 'boxberry_act_link' );
+            $errorText        = $order->get_meta( 'boxberry_error' );
+            $pvzCode          = $order->get_meta( 'boxberry_code' );
+            $boxberryAddress  = $order->get_meta( 'boxberry_address' );
+            $key              = $shippingData['object']->get_option( 'key' );
+            $apiUrl           = $shippingData['object']->get_option( 'api_url' );
 
             $client = new \Boxberry\Client\Client();
-            $client->setApiUrl($apiUrl);
-            $client->setKey($key);
+            $client->setApiUrl( $apiUrl );
+            $client->setKey( $key );
 
             $orderData = [
-                'track' => $trackingNumber,
-                'act' => $actLink,
+                'track'  => $trackingNumber,
+                'act'    => $actLink,
                 'client' => $client
             ];
 
-            if (isset($errorText) && empty($trackingNumber) && $errorText !== '') {
+            if ( isset( $errorText ) && empty( $trackingNumber ) && $errorText !== '' ) {
                 echo '<p><b><u>Возникла ошибка</u></b>: ' . $errorText . '</p>';
-
                 echo '<p><input type="submit" class="add_note button" name="boxberry_create_parsel" value="Попробовать снова"></p>';
 
-                if ($shippingData['object'] -> self_type) {
+                if ( $shippingData['object']->self_type ) {
                     echo '<p>Код пункта выдачи: <a href="#" data-id="' . esc_attr(
-                            $post -> ID
+                            $post->ID
                         ) . '" data-boxberry-open="true" data-boxberry-city="' . esc_attr(
-                            $order -> shipping_city
-                        ) . '">' . esc_attr(
-                            $pvzCode
-                        ) . '</a></p>';
-                    echo '<p>Адрес пункта выдачи: ' . esc_html($boxberryAddress) . '</p>';
+                             $order->shipping_city
+                         ) . '">' . esc_attr(
+                             $pvzCode
+                         ) . '</a></p>';
+                    echo '<p>Адрес пункта выдачи: ' . esc_html( $boxberryAddress ) . '</p>';
                 }
-            } elseif (isset($trackingNumber) && $trackingNumber !== '') {
+            } elseif ( isset( $trackingNumber ) && $trackingNumber !== '' ) {
                 echo '<p><span style="display: inline-block;">Номер отправления:</span>';
-                echo '<span style="margin-left: 10px"><b>' . esc_html($trackingNumber) . '</b></span>';
-                if (isset($trackingSiteLink) && $trackingSiteLink !== '') {
+                echo '<span style="margin-left: 10px"><b>' . esc_html( $trackingNumber ) . '</b></span>';
+
+                if ( isset( $trackingSiteLink ) && $trackingSiteLink !== '' ) {
                     echo '<p><a class="button" href="' . esc_url(
                             $trackingSiteLink
                         ) . '" target="_blank">Посмотреть на сайте Boxberry</a></p>';
                 }
-                echo '<p><a class="button" href="' . esc_url($labelLink) . '" target="_blank">Скачать этикетку</a></p>';
-                if (isset($actLink) && $actLink !== '') {
-                    echo '<p><a class="button" href="' . esc_url($actLink) . '" target="_blank">Скачать акт</a></p>';
+
+                echo '<p><a class="button" href="' . esc_url( $labelLink ) . '" target="_blank">Скачать этикетку</a></p>';
+
+                if ( isset( $actLink ) && $actLink !== '' ) {
+                    echo '<p><a class="button" href="' . esc_url( $actLink ) . '" target="_blank">Скачать акт</a></p>';
                 }
-                if (empty($actLink)){
+
+                if ( empty( $actLink ) ) {
                     echo '<p><input type="submit" class="add_note button" name="boxberry_create_act" value="Сформировать акт"></p>';
                 }
+
                 echo '<p>Текущий статус заказа в Boxberry:</p>';
-                echo bxbGetLastStatusInOrder($orderData);
+                echo bxbGetLastStatusInOrder( $orderData );
             } else {
-                if ($shippingData['object'] -> self_type) {
-                    if ($pvzCode === '') {
+                if ( $shippingData['object']->self_type ) {
+                    if ( $pvzCode === '' ) {
                         echo '<p><a href="#" data-id="' . esc_attr(
-                                $post -> ID
+                                $post->ID
                             ) . '" data-boxberry-open="true" data-boxberry-city="' . esc_attr(
-                                $order -> shipping_state
-                            ) . ' ' . esc_attr($order -> shipping_city) . '">Выберите ПВЗ</a></p>';
+                                 $order->shipping_state
+                             ) . ' ' . esc_attr( $order->shipping_city ) . '">Выберите ПВЗ</a></p>';
+
                         return;
                     }
 
                     echo '<p>Код пункта выдачи: <a href="#" data-id="' . esc_attr(
-                            $post -> ID
+                            $post->ID
                         ) . '" data-boxberry-open="true" data-boxberry-city="' . esc_attr(
-                            $order -> shipping_city
-                        ) . '">' . esc_html(
-                            $pvzCode
-                        ) . '</a></p>';
-                    echo '<p>Адрес пункта выдачи: ' . esc_html($boxberryAddress) . '</p>';
+                             $order->shipping_city
+                         ) . '">' . esc_html(
+                             $pvzCode
+                         ) . '</a></p>';
+                    echo '<p>Адрес пункта выдачи: ' . esc_html( $boxberryAddress ) . '</p>';
                 }
                 echo '<p>После нажатия кнопки заказ будет создан в системе Boxberry.</p>';
                 echo '<p><input type="submit" class="add_note button" name="boxberry_create_parsel" value="Отправить заказ в систему"></p>';
             }
+        }
+    }
 
+    function boxberry_meta_tracking_code( $postId )
+    {
+        if ( isset( $_POST['boxberry_create_parsel'] ) ) {
+            boxberry_get_tracking_code( $postId );
         }
 
+        if ( isset( $_POST['boxberry_create_act'] ) ) {
+            bxbCreateAct( $postId );
+        }
     }
+
     add_action( 'woocommerce_process_shop_order_meta', 'boxberry_meta_tracking_code', 0, 2 );
 
-    function boxberry_meta_tracking_code($postId)
+    function bxbCreateAct( $postId )
     {
-        if (isset($_POST['boxberry_create_parsel'])) {
-            boxberry_get_tracking_code($postId);
-        }
+        $order        = wc_get_order( $postId );
+        $shippingData = bxbGetShippingData( $order );
 
-        if (isset($_POST['boxberry_create_act'])) {
-            bxbCreateAct($postId);
-        }
-    }
+        if ( isset( $shippingData['object'] ) ) {
+            $trackingNumber = $order->get_meta( 'boxberry_tracking_number' );
 
-    function bxbCreateAct($postId)
-    {
-        $order = wc_get_order($postId);
-        $orderId = $order->get_id();
+            $key    = $shippingData['object']->get_option( 'key' );
+            $apiUrl = $shippingData['object']->get_option( 'api_url' );
 
-        $shippingData = bxbGetShippingData($order);
+            $parselSendRequest = wp_remote_get( $apiUrl . '?token=' . $key . '&method=ParselSend&ImIds=' . $trackingNumber );
+            $parselSend        = json_decode( wp_remote_retrieve_body( $parselSendRequest ), true );
 
-        if (isset($shippingData['object'])) {
-            $trackingNumber = get_post_meta($orderId, 'boxberry_tracking_number', true);
-
-            $key = $shippingData['object']->get_option('key');
-            $apiUrl = $shippingData['object']->get_option('api_url');
-
-            $parselSendRequest = wp_remote_get($apiUrl . '?token=' . $key . '&method=ParselSend&ImIds=' . $trackingNumber);
-            $parselSend = json_decode(wp_remote_retrieve_body($parselSendRequest), true);
-
-            if (isset($parselSend['label'])) {
-                update_post_meta($orderId, 'boxberry_act_link', $parselSend['label']);
-                update_post_meta($orderId, 'boxberry_tracking_site_link', 'https://boxberry.ru/tracking-page?id=' . $trackingNumber);
+            if ( isset( $parselSend['label'] ) ) {
+                $order->update_meta_data( 'boxberry_act_link', $parselSend['label'] );
+                $order->update_meta_data( 'boxberry_tracking_site_link', 'https://boxberry.ru/tracking-page?id=' . $trackingNumber );
+                $order->save();
             }
 
-            if (isset($parselSend['err'])) {
-                update_post_meta($orderId, 'boxberry_error', $parselSend['err']);
+            if ( isset( $parselSend['err'] ) ) {
+                $order->update_meta_data( 'boxberry_error', $parselSend['err'] );
+                $order->save();
             }
         }
     }
 
-    function boxberry_get_tracking_code($postId)
+    function boxberry_get_tracking_code( $postId )
     {
-        $order = wc_get_order($postId);
+        $order   = wc_get_order( $postId );
         $orderId = $order->get_id();
 
-        $shippingData = bxbGetShippingData($order);
+        $shippingData = bxbGetShippingData( $order );
 
-        if (isset($shippingData['object'])) {
+        if ( isset( $shippingData['object'] ) ) {
             $client = new \Boxberry\Client\Client();
-            $client->setApiUrl($shippingData['object']->get_option('api_url'));
-            $client->setKey($shippingData['object']->get_option('key'));
+            $client->setApiUrl( $shippingData['object']->get_option( 'api_url' ) );
+            $client->setKey( $shippingData['object']->get_option( 'key' ) );
             $parselCreate = $client::getParselCreate();
 
             $parsel = new \Boxberry\Models\Parsel();
-            $parsel->setSourcePlatform('wordpress');
-            $parsel->setOrderId(($shippingData['object']->get_option('order_prefix') ?
-                    $shippingData['object']->get_option('order_prefix') . '_' : '')
-                . $order->get_order_number());
+            $parsel->setSourcePlatform( 'wordpress' );
+            $parsel->setOrderId( ( $shippingData['object']->get_option( 'order_prefix' ) ?
+                    $shippingData['object']->get_option( 'order_prefix' ) . '_' : '' )
+                                 . $order->get_order_number() );
 
-            $parsel->setPrice($order->get_total() - $shippingData['cost']);
-            $parsel->setDeliverySum($shippingData['cost']);
+            $customerName  = $order->get_formatted_shipping_full_name();
+            $customerPhone = $order->get_meta( '_shipping_phone' );
+            $customerEmail = $order->get_meta( '_shipping_email' );
 
-            if (strpos($shippingData['method_id'], '_after') === false) {
-                $parsel->setPaymentSum(0);
-            } else {
-                $parsel->setPaymentSum($order->get_total());
+            if ( trim( $customerName ) === '' ) {
+                $customerName = $order->get_formatted_billing_full_name();
             }
 
-            $customer_name = $order->get_formatted_shipping_full_name();
-            $address = $order->get_shipping_state() . ', ' . $order->get_shipping_city() . ', ' . $order->get_shipping_address_1() . ', ' . $order->get_shipping_address_2();
-            $customer_phone = get_post_meta($order->get_order_number(), '_shipping_phone', true);
-            $customer_email = get_post_meta($order->get_order_number(), '_shipping_email', true);
+            if ( trim( $customerPhone ) === '' ) {
+                $customerPhone = $order->get_billing_phone();
+            }
 
-            if (trim($customer_name) === '') {
-                $customer_name = $order->get_formatted_billing_full_name();
-            }
-            if (trim(str_replace(',', '', $address)) === '') {
-                $address = $order->get_billing_state() . ', ' . $order->get_billing_city() . ', ' . $order->get_billing_address_1() . ', ' . $order->get_billing_address_2();
-            }
-            if (trim($customer_phone) === '') {
-                $customer_phone = $order->get_billing_phone();
-            }
-            if (trim($customer_email) === '') {
-                $customer_email = $order->get_billing_email();
+            if ( trim( $customerEmail ) === '' ) {
+                $customerEmail = $order->get_billing_email();
             }
 
             $customer = new \Boxberry\Models\Customer();
-            $customer->setFio($customer_name);
-            $customer->setEmail($customer_email);
-            $customer->setPhone($customer_phone);
-            $parsel->setCustomer($customer);
+            $customer->setFio( $customerName );
+            $customer->setPhone( $customerPhone );
+            $customer->setEmail( $customerEmail );
+            $parsel->setCustomer( $customer );
 
-            $items = new \Boxberry\Collections\Items();
-            $order_items = $order->get_items();
-            foreach ($order_items as $key => $orderItem) {
-                $current_unit = strtolower(get_option('woocommerce_weight_unit'));
-                $weight_c = 1;
+            $items        = new \Boxberry\Collections\Items();
+            $orderItems   = $order->get_items();
+            $declaredCost = 0;
 
-                if ($current_unit === 'kg') {
-                    $weight_c = 1000;
+            foreach ( $orderItems as $orderItem ) {
+                $current_unit = strtolower( get_option( 'woocommerce_weight_unit' ) );
+                $weight_c     = ( $current_unit === 'kg' ) ? 1000 : 1;
+
+                $product = wc_get_product( $orderItem['product_id'] );
+
+                if ( $product->is_virtual() || $product->is_downloadable() ) {
+                    continue;
                 }
 
-                $product = wc_get_product($orderItem['product_id']);
+                $quantity     = $orderItem->get_quantity();
+                $itemPrice    = $orderItem->get_total();
+                $declaredCost += $itemPrice;
 
-                $itemWeight = bxbGetWeight($product, $orderItem['variation_id']);
-                $itemWeight = (int)($itemWeight * $weight_c * $orderItem["qty"]);
+                $itemWeight = bxbGetWeight( $product, $orderItem['variation_id'] );
+                $itemWeight = (int) ( $itemWeight * $weight_c * $quantity );
 
-                if ($itemWeight === 0) {
-                    $itemWeight = $shippingData['object']->get_option('default_weight') * $orderItem["qty"];
+                if ( $itemWeight === 0 ) {
+                    $itemWeight = $shippingData['object']->get_option( 'default_weight' ) * $quantity;
                 }
 
                 $item = new \Boxberry\Models\Item();
-                $id = (string)((isset($product->sku) && !empty($product->sku)) ? $product->sku : $orderItem['product_id']);
-
-                $item->setId($id);
-
-                $item->setName($orderItem['name']);
+                $id   = (string) ( ( isset( $product->sku ) && ! empty( $product->sku ) ) ? $product->sku : $orderItem['product_id'] );
+                $item->setId( $id );
+                $item->setName( $orderItem['name'] );
 
                 if ( get_option( 'woocommerce_calc_taxes' ) === 'yes' ) {
                     $itemTaxRate = get_tax_rate_for_product( $product );
                     $item->setNds( $itemTaxRate );
                 }
 
-                // $item->setPrice($product->get_price());
-                $item->setPrice((float)$orderItem['total'] / $orderItem['qty']);
-                $item->setQuantity($orderItem['qty']);
-                $item->setWeight($itemWeight);
+                $item->setPrice( (float) $orderItem['total'] / $quantity );
+                $item->setQuantity( $quantity );
+                $item->setWeight( $itemWeight );
                 $items[] = $item;
-                unset($product);
+                unset( $product );
             }
 
+            $parsel->setItems( $items );
+            $parsel->setPrice( $declaredCost );
+            $parsel->setDeliverySum( $shippingData['cost'] );
 
-            $parsel->setItems($items);
+            if ( strpos( $shippingData['method_id'], '_after' ) === false ) {
+                $parsel->setPaymentSum( 0 );
+            } else {
+                $parsel->setPaymentSum( $declaredCost + $shippingData['cost'] );
+            }
+
             $shop = array(
-                'name' => '',
+                'name'  => '',
                 'name1' => ''
             );
 
-            if (strpos($shippingData['method_id'], 'boxberry_self') !== false) {
-                $parsel->setVid(1);
-                $boxberry_code = get_post_meta($orderId, 'boxberry_code', true);
+            if ( strpos( $shippingData['method_id'], 'boxberry_self' ) !== false ) {
+                $parsel->setVid( 1 );
+                $boxberry_code = $order->get_meta( 'boxberry_code' );
 
-                if ($boxberry_code === '') {
-                    update_post_meta($orderId, 'boxberry_error', 'Для доставки до пункта ПВЗ нужно указать его код');
+                if ( $boxberry_code === '' ) {
+                    $error = 'Для доставки до пункта ПВЗ нужно указать его код';
+                    $order->update_meta_data( 'boxberry_error', $error );
+                    $order->save();
+
                     return;
                 }
 
-                $shop['name'] = $boxberry_code;
-                $shop['name1'] = $shippingData['object']->get_option('from');
+                $shop['name']  = $boxberry_code;
+                $shop['name1'] = $shippingData['object']->get_option( 'from' );
             } else {
                 $postCode = $order->get_shipping_postcode();
-                if (is_null($postCode) || trim((string)$postCode) === '') {
+                if ( is_null( $postCode ) || trim( (string) $postCode ) === '' ) {
                     $postCode = $order->get_billing_postcode();
                 }
+
                 $shippingCity = $order->get_shipping_city();
-                if (is_null($shippingCity) || trim((string)$shippingCity) === '') {
+                if ( is_null( $shippingCity ) || trim( (string) $shippingCity ) === '' ) {
                     $shippingCity = $order->get_billing_city();
                 }
+
                 $shippingState = $order->get_shipping_state();
-                if (is_null($shippingState) || trim((string)$shippingState) === '') {
+                if ( is_null( $shippingState ) || trim( (string) $shippingState ) === '' ) {
                     $shippingState = $order->get_billing_state();
                 }
+
                 $shippingAddress = $order->get_shipping_address_1() . ', ' . $order->get_shipping_address_2();
-                if (trim(str_replace(',', '', $shippingAddress)) === '') {
+                if ( trim( str_replace( ',', '', $shippingAddress ) ) === '' ) {
                     $shippingAddress = $order->get_billing_address_1() . ', ' . $order->get_billing_address_2();
                 }
 
@@ -1001,7 +1051,8 @@ if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', g
                 $location->setClient( $client );
                 $location->find( $shippingCity, $shippingState );
                 if ( $location->getError() ) {
-                    update_post_meta( $orderId, 'boxberry_error', $location->getError() );
+                    $order->update_meta_data( 'boxberry_error', $location->getError() );
+                    $order->save();
 
                     return;
                 }
@@ -1019,7 +1070,8 @@ if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', g
 
                 if ( ! validateShippingZone( $currentShippingZone->get_id(), $shippingMethodZones, $location->getCountryCode() ) ) {
                     $error = 'Регион текущего метода доставки не соответстует стране передаваемого города получателя.';
-                    update_post_meta( $orderId, 'boxberry_error', $error );
+                    $order->update_meta_data( 'boxberry_error', $error );
+                    $order->save();
 
                     return;
                 }
@@ -1033,7 +1085,8 @@ if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', g
                         $dadataRequestResult = $client->execute( $dadataSuggestions );
                     } catch ( Exception $e ) {
                         $error = 'Не удалось определить город, попробуйте отредактировать адрес и выгрузить заказ повторно, либо создать заказ вручную в ЛК.';
-                        update_post_meta( $orderId, 'boxberry_error', $error );
+                        $order->update_meta_data( 'boxberry_error', $error );
+                        $order->save();
 
                         return;
                     }
@@ -1051,7 +1104,8 @@ if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', g
                         $parsel->setExport( $export );
                     } catch ( Exception $e ) {
                         $error = $e->getMessage();
-                        update_post_meta( $orderId, 'boxberry_error', $error );
+                        $order->update_meta_data( 'boxberry_error', $error );
+                        $order->save();
 
                         return;
                     }
@@ -1059,84 +1113,96 @@ if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', g
                     $client->disableDebugMode();
                 }
 
-                $parsel->setVid(2);
+                $parsel->setVid( 2 );
                 $courierDost = new \Boxberry\Models\CourierDelivery();
-                $courierDost->setIndex($postCode);
-                $courierDost->setCity($shippingCity);
-                $courierDost->setAddressp($shippingAddress);
-                $parsel->setCourierDelivery($courierDost);
+                $courierDost->setIndex( $postCode );
+                $courierDost->setCity( $shippingCity );
+                $courierDost->setAddressp( $shippingAddress );
+                $parsel->setCourierDelivery( $courierDost );
             }
-            $parsel->setShop($shop);
-            $parselCreate->setParsel($parsel);
-            $autoact = (int)$shippingData['object']->get_option('autoact');
-            $autoStatus = $shippingData['object']->get_option('order_status_send');
+
+            $parsel->setShop( $shop );
+            $parselCreate->setParsel( $parsel );
+            $autoact    = (int) $shippingData['object']->get_option( 'autoact' );
+            $autoStatus = $shippingData['object']->get_option( 'order_status_send' );
+
             try {
                 /** @var ParselCreateResponse $answer */
-                $answer = $client->execute($parselCreate);
-                if ($answer->getTrack() !== '') {
-                    update_post_meta($orderId, 'boxberry_tracking_number', $answer->getTrack());
-                    update_post_meta($orderId, 'boxberry_link', $answer->getLabel());
-                    if ($autoact === 1) {
-                        bxbCreateAct($postId);
+                $answer = $client->execute( $parselCreate );
+                if ( $answer->getTrack() !== '' ) {
+                    $order->update_meta_data( 'boxberry_tracking_number', $answer->getTrack() );
+                    $order->update_meta_data( 'boxberry_link', $answer->getLabel() );
+                    $order->save();
+
+                    if ( $autoact === 1 ) {
+                        bxbCreateAct( $postId );
                     }
-                    if ($autoStatus && wc_is_order_status($autoStatus) && $order = wc_get_order($orderId)) {
-                        $order->update_status($autoStatus, sprintf(__('Успешная регистрация в Boxberry: %s ', 'boxberry'), $answer->getTrack()));
-                        do_action('woocommerce_boxberry_tracking_code', 'send', $order, $answer->getTrack());
+
+                    if ( $autoStatus && wc_is_order_status( $autoStatus ) && $order = wc_get_order( $orderId ) ) {
+                        $order->update_status( $autoStatus, sprintf( __( 'Успешная регистрация в Boxberry: %s ', 'boxberry' ), $answer->getTrack() ) );
+                        do_action( 'woocommerce_boxberry_tracking_code', 'send', $order, $answer->getTrack() );
                     }
                 }
-            } catch (Exception $e) {
-                if ($e->getMessage() === 'Ваша учетная запись заблокирована') {
-                    update_post_meta($orderId, 'boxberry_error', 'В профиле доставки <b>"' . $shippingData['object']->get_option('title') . '"</b> указан не верный API-token, либо данный профиль доставки удален. Проверить ваш API-token вы можете <a href="https://account.boxberry.ru/client/infoblock/index?tab=api&api=methods" target="_blank">здесь</a>. Если API-token указан корректно и ошибка повторяется обратитесь в <a href="https://sd.boxberry.ru" target="_blank">техподдержку</a>');
+            } catch ( Exception $e ) {
+                if ( $e->getMessage() === 'Ваша учетная запись заблокирована' ) {
+                    $order->update_meta_data( 'boxberry_error', 'В профиле доставки <b>"' . $shippingData['object']->get_option( 'title' ) . '"</b> указан не верный API-token, либо данный профиль доставки удален. Проверить ваш API-token вы можете <a href="https://account.boxberry.ru/client/infoblock/index?tab=api&api=methods" target="_blank">здесь</a>. Если API-token указан корректно и ошибка повторяется обратитесь в <a href="https://sd.boxberry.ru" target="_blank">техподдержку</a>' );
                 } else {
-                    update_post_meta($orderId, 'boxberry_error', $e->getMessage());
+                    $order->update_meta_data( 'boxberry_error', $e->getMessage() );
                 }
+                $order->save();
             }
         }
     }
 
-    function bxbGetShippingData($order)
+    function bxbGetShippingData( $order )
     {
-        foreach ($order->get_items('shipping') as $item) {
-            $methodId = $item->get_method_id();
-            $exactInstanceId = $item->get_instance_id();
-            $total = $item->get_total();
-        }
+        if ( ! empty( $order ) ) {
+            foreach ( $order->get_items( 'shipping' ) as $item ) {
+                $methodId        = $item->get_method_id();
+                $exactInstanceId = $item->get_instance_id();
+                $total           = $item->get_total();
 
-        if ($exactShippingObject = WC_Shipping_Zones::get_shipping_method($exactInstanceId)) {
-            return [
-                'method_id' => $methodId,
-                'object' => $exactShippingObject,
-                'cost' => $total,
-                'title' => $exactShippingObject->get_option('title')
-            ];
-        }
+                if ( strpos( $methodId, 'boxberry' ) !== false ) {
+                    break;
+                }
+            }
 
-        global $wpdb;
-        $raw_methods_sql = "SELECT * FROM {$wpdb->prefix}woocommerce_shipping_zone_methods WHERE method_id = %s";
-        $result = $wpdb->get_results($wpdb->prepare($raw_methods_sql, $methodId));
-        $instanceId = $result[0]->instance_id;
+            if ( $exactShippingObject = WC_Shipping_Zones::get_shipping_method( $exactInstanceId ) ) {
+                return [
+                    'method_id' => $methodId,
+                    'object'    => $exactShippingObject,
+                    'cost'      => $total,
+                    'title'     => $exactShippingObject->get_option( 'title' )
+                ];
+            }
 
-        if ($shippingObject = WC_Shipping_Zones::get_shipping_method($instanceId)) {
-            return [
-                'method_id' => $methodId,
-                'object' => $shippingObject,
-                'cost' => $total,
-                'title' => $shippingObject->get_option('title')
-            ];
+            global $wpdb;
+            $raw_methods_sql = "SELECT * FROM {$wpdb->prefix}woocommerce_shipping_zone_methods WHERE method_id = %s";
+            $result          = $wpdb->get_results( $wpdb->prepare( $raw_methods_sql, $methodId ) );
+            $instanceId      = $result[0]->instance_id;
+
+            if ( $shippingObject = WC_Shipping_Zones::get_shipping_method( $instanceId ) ) {
+                return [
+                    'method_id' => $methodId,
+                    'object'    => $shippingObject,
+                    'cost'      => $total,
+                    'title'     => $shippingObject->get_option( 'title' )
+                ];
+            }
         }
 
         return [];
-
     }
 
-    function get_tax_rate_for_product( $product ) {
+    function get_tax_rate_for_product( $product )
+    {
         $taxStatus = $product->get_tax_status();
 
         if ( $taxStatus !== 'none' ) {
             $taxClass = $product->get_tax_class();
             $taxRates = WC_Tax::get_rates( $taxClass );
 
-            if ( !empty( $taxRates ) ) {
+            if ( ! empty( $taxRates ) ) {
                 foreach ( $taxRates as $rate ) {
                     return $rate['rate'];
                 }
@@ -1146,9 +1212,9 @@ if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', g
         return null;
     }
 
-    function boxberry_woocommerce_after_shipping_rate( $method ) {
+    function boxberry_woocommerce_after_shipping_rate( $method )
+    {
         if ( is_checkout() ) {
-
             if ( strpos( $method->get_method_id(), 'boxberry_self' ) !== false ) {
                 $shipping = WC_Shipping_Zones::get_shipping_method( $method->get_instance_id() );
             }
@@ -1218,6 +1284,10 @@ if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', g
                 foreach ( $cartProducts as $cartProduct ) {
                     $product = wc_get_product( $cartProduct['product_id'] );
 
+                    if ( $product->is_virtual() || $product->is_downloadable() ) {
+                        continue;
+                    }
+
                     $itemWeight = bxbGetWeight( $product, $cartProduct['variation_id'] );
                     $itemWeight = (float) $itemWeight * $weight_c;
 
@@ -1230,7 +1300,18 @@ if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', g
                     $weight += ( ! empty( $itemWeight ) ? $itemWeight : (float) $shipping->get_option( 'default_weight' ) ) * $cartProduct['quantity'];
                 }
 
-                $totalval = WC()->cart->get_cart_contents_total() + WC()->cart->get_total_tax();
+                $totalval = 0;
+
+                foreach ( WC()->cart->get_cart() as $cart_item ) {
+                    $product = $cart_item['data'];
+
+                    if ( $product->is_virtual() || $product->is_downloadable() ) {
+                        continue;
+                    }
+
+                    $totalval += $cart_item['line_total'];
+                    $totalval += $cart_item['line_tax'];
+                }
 
                 $surch = $shipping->get_option( 'surch' ) !== '' ? (int) $shipping->get_option( 'surch' ) : 1;
 
@@ -1251,7 +1332,7 @@ if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', g
                 if ( isset( $package[0]['destination']['city'], $chosen_shipping_method[0] ) && $package[0]['destination']['city'] !== '' && $chosen_shipping_method[0] === $method->get_id() ) {
                     echo '                
                 <p style="margin: 4px 0 8px 15px;"><a ' . $bxbbutton . ' id="' . esc_attr( $method->get_id() ) . '" href="#"
-				   style="' . esc_attr( $display ) . '"
+                   style="' . esc_attr( $display ) . '"
                    data-surch =" ' . esc_attr( $surch ) . '"
                    data-boxberry-open="true"
                    data-method="' . esc_attr( $method->get_method_id() ) . '"
@@ -1264,7 +1345,6 @@ if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', g
                    data-width="' . esc_attr( $width ) . '"
                    data-depth="' . esc_attr( $depth ) . '"
                    data-api-url="' . esc_attr( $api_url ) . '"
-                   
                 >' . $link_with_img . $nbsp . $link_title . '</a></p>';
                 }
             }
@@ -1278,148 +1358,163 @@ if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', g
         return;
     }
 
-    function my_admin_enqueue($hook)
+    function my_enqueue( $hook )
     {
-        $widget_url = get_option('wiidget_url');
-        if (strpos($widget_url,'http://') !== false){
-            $protocol = 'http://';
-            $widget_url = str_replace('http://','',$widget_url);
-            wp_register_script( 'boxberry_points', 'http://'.$widget_url);
-        }else if (strpos($widget_url,'https://') !== false){
-            $protocol = 'https://';
-            $widget_url = str_replace('https://','',$widget_url);
-            wp_register_script( 'boxberry_points', 'https://'.$widget_url);
-        }else {
-            wp_register_script( 'boxberry_points', 'https://points.boxberry.de/js/boxberry.js');
+        if ( is_cart() || is_checkout() ) {
+            $widget_url = get_option( 'wiidget_url' );
+            if ( strpos( $widget_url, 'http://' ) !== false ) {
+                $protocol   = 'http://';
+                $widget_url = str_replace( $protocol, '', $widget_url );
+                wp_register_script( 'boxberry_points', $protocol . $widget_url );
+            } else {
+                if ( strpos( $widget_url, 'https://' ) !== false ) {
+                    $protocol   = 'https://';
+                    $widget_url = str_replace( $protocol, '', $widget_url );
+                    wp_register_script( 'boxberry_points', $protocol . $widget_url );
+                } else {
+                    wp_register_script( 'boxberry_points', 'https://points.boxberry.de/js/boxberry.js' );
+                }
+            }
+            wp_enqueue_script( 'boxberry_points' );
+
+            wp_enqueue_script( 'boxberry_script_handle', plugin_dir_url( __FILE__ ) . ( 'js/boxberry.js' ), array( "jquery" ), '2.20' );
+
+            wp_register_style( 'boxberry_button', plugin_dir_url( __FILE__ ) . ( 'css/bxbbutton.css' ) );
+
+            wp_enqueue_style( 'boxberry_button' );
+        }
+    }
+
+    add_action( 'wp_enqueue_scripts', 'my_enqueue' );
+
+    function my_admin_enqueue( $hook )
+    {
+        $widget_url = get_option( 'wiidget_url' );
+        if ( strpos( $widget_url, 'http://' ) !== false ) {
+            $protocol   = 'http://';
+            $widget_url = str_replace( $protocol, '', $widget_url );
+            wp_register_script( 'boxberry_points', $protocol . $widget_url );
+        } elseif ( strpos( $widget_url, 'https://' ) !== false ) {
+            $protocol   = 'https://';
+            $widget_url = str_replace( $protocol, '', $widget_url );
+            wp_register_script( 'boxberry_points', $protocol . $widget_url );
+        } else {
+            wp_register_script( 'boxberry_points', 'https://points.boxberry.de/js/boxberry.js' );
         }
         wp_enqueue_script( 'boxberry_points' );
 
-        wp_enqueue_script( 'boxberry_script_handle', plugin_dir_url( __FILE__ ) . ( 'js/boxberry_admin.js' ), array("jquery"), '2.17' );
+        wp_enqueue_script( 'boxberry_script_handle', plugin_dir_url( __FILE__ ) . ( 'js/boxberry_admin.js' ), array( "jquery" ), '2.17' );
     }
 
-    function my_enqueue($hook)
-    {
-        if (is_cart() || is_checkout()) {
-            $widget_url = get_option('wiidget_url');
-            if (strpos($widget_url, 'http://') !== false) {
-                $protocol = 'http://';
-                $widget_url = str_replace('http://', '', $widget_url);
-                wp_register_script('boxberry_points', 'http://' . $widget_url);
-            } else {
-                if (strpos($widget_url, 'https://') !== false) {
-                    $protocol = 'https://';
-                    $widget_url = str_replace('https://', '', $widget_url);
-                    wp_register_script('boxberry_points', 'https://' . $widget_url);
-                } else {
-                    wp_register_script('boxberry_points', 'https://points.boxberry.de/js/boxberry.js');
-                }
-            }
-            wp_enqueue_script('boxberry_points');
-
-            wp_enqueue_script('boxberry_script_handle', plugin_dir_url(__FILE__) . ('js/boxberry.js'), array("jquery"), '2.20');
-
-            wp_register_style('boxberry_button', plugin_dir_url(__FILE__) . ('css/bxbbutton.css'));
-
-            wp_enqueue_style('boxberry_button');
-        }
-    }
-    add_action( 'wp_enqueue_scripts', 'my_enqueue' );
     add_action( 'admin_enqueue_scripts', 'my_admin_enqueue' );
 
-    function boxberry_put_choice_code($order_id)
+    function boxberry_put_choice_code( $order_id )
     {
-        $shipping_method      = array_shift($_POST[ 'shipping_method' ]);
-        $shipping_method_name = preg_replace('/\d+/', '', $shipping_method);
-        $array                = get_user_meta(get_current_user_id(), '_boxberry_array', true);
+        $order = wc_get_order( $order_id );
 
-        if (isset($_COOKIE['bxb_code'], $_COOKIE['bxb_address'])) {
-            update_post_meta($order_id, 'boxberry_code', sanitize_text_field($_COOKIE[ 'bxb_code' ]));
-            update_post_meta($order_id, 'boxberry_address', sanitize_text_field($_COOKIE[ 'bxb_address' ]));
+        if ( isset( $_POST['shipping_method'] ) && is_array( $_POST['shipping_method'] ) ) {
+            $shipping_method       = array_shift( $_POST['shipping_method'] );
+            $shipping_method_parts = explode( ':', $shipping_method );
+            $shipping_method_name  = $shipping_method_parts[0];
+
+            if ( in_array( $shipping_method_name, [
+                'boxberry_self_after',
+                'boxberry_self',
+                'boxberry_courier_after',
+                'boxberry_courier'
+            ] ) ) {
+                if ( isset( $_COOKIE['bxb_code'], $_COOKIE['bxb_address'] ) ) {
+                    $order->update_meta_data( 'boxberry_code', sanitize_text_field( $_COOKIE['bxb_code'] ) );
+                    $order->update_meta_data( 'boxberry_address', sanitize_text_field( $_COOKIE['bxb_address'] ) );
+                    $order->save();
+                }
+                update_user_meta( get_current_user_id(), '_boxberry_array', array() );
+            }
         }
-        update_user_meta(get_current_user_id(), '_boxberry_array', array ());
     }
 
-    add_action('woocommerce_new_order', 'boxberry_put_choice_code');
-    add_action('wp_ajax_boxberry_update', 'boxberry_update_callback');
-    add_action('wp_ajax_nopriv_boxberry_update', 'boxberry_update_callback');
-    add_action('wp_ajax_boxberry_admin_update', 'boxberry_admin_update_callback');
+    add_action( 'woocommerce_new_order', 'boxberry_put_choice_code' );
 
     function boxberry_update_callback()
     {
-        setcookie("bxb_code", sanitize_text_field($_POST[ 'code' ]), 0, '/');
-        setcookie("bxb_address", sanitize_text_field($_POST[ 'address' ]), 0, '/');
+        setcookie( "bxb_code", sanitize_text_field( $_POST['code'] ), 0, '/' );
+        setcookie( "bxb_address", sanitize_text_field( $_POST['address'] ), 0, '/' );
     }
+
+    add_action( 'wp_ajax_boxberry_update', 'boxberry_update_callback' );
+    add_action( 'wp_ajax_nopriv_boxberry_update', 'boxberry_update_callback' );
 
     function boxberry_admin_update_callback()
     {
-        update_post_meta(sanitize_key($_POST[ 'id' ]), 'boxberry_code', sanitize_text_field($_POST[ 'code' ]));
-        update_post_meta(sanitize_key($_POST[ 'id' ]), 'boxberry_address', sanitize_text_field($_POST[ 'address' ]));
+        update_post_meta( sanitize_key( $_POST['id'] ), 'boxberry_code', sanitize_text_field( $_POST['code'] ) );
+        update_post_meta( sanitize_key( $_POST['id'] ), 'boxberry_address', sanitize_text_field( $_POST['address'] ) );
     }
+
+    add_action( 'wp_ajax_boxberry_admin_update', 'boxberry_admin_update_callback' );
 
     function js_variables()
     {
-        $variables = array (
-            'ajax_url' => admin_url('admin-ajax.php')
+        $variables = array(
+            'ajax_url' => admin_url( 'admin-ajax.php' )
         );
         echo '<script type="text/javascript">';
         echo 'window.wp_data = ';
-        echo json_encode($variables);
+        echo json_encode( $variables );
         echo ';</script>';
     }
-    add_action('wp_head', 'js_variables');
+
+    add_action( 'wp_head', 'js_variables' );
 
     function admin_js_variables()
     {
-        $variables = array (
-            'ajax_url' => admin_url('admin-ajax.php')
+        $variables = array(
+            'ajax_url' => admin_url( 'admin-ajax.php' )
         );
         echo '<script type="text/javascript">';
         echo 'window.wp_data = ';
-        echo json_encode($variables);
+        echo json_encode( $variables );
         echo ';</script>';
     }
-    add_action('admin_head', 'js_variables');
 
-    add_action('woocommerce_order_status_changed', 'boxberry_register_on_status', 10 , 3);
+    add_action( 'admin_head', 'admin_js_variables' );
 
-    function boxberry_register_on_status($orderId, $previous_status, $next_status)
+    function boxberry_register_on_status( $orderId, $previous_status, $next_status )
     {
-        $order = wc_get_order($orderId);
-        $shippingData = bxbGetShippingData($order);
-        if (isset($shippingData['method_id'], $shippingData['object']) && strpos($shippingData['method_id'], 'boxberry') !== false) {
-            $parselCreateStatus = $shippingData['object']->get_option('parselcreate_on_status');
-            if ($next_status === substr($parselCreateStatus, 3) && !get_post_meta(
-                    $orderId,
-                    'boxberry_tracking_number',
-                    true
-                )) {
-                boxberry_get_tracking_code($orderId);
+        $order        = wc_get_order( $orderId );
+        $shippingData = bxbGetShippingData( $order );
+
+        if ( isset( $shippingData['method_id'], $shippingData['object'] ) && strpos( $shippingData['method_id'], 'boxberry' ) !== false ) {
+            $parselCreateStatus = $shippingData['object']->get_option( 'parselcreate_on_status' );
+
+            if ( $next_status === substr( $parselCreateStatus, 3 ) && ! $order->get_meta( 'boxberry_tracking_number' ) ) {
+                boxberry_get_tracking_code( $orderId );
             }
         }
     }
 
-    add_action('woocommerce_after_checkout_validation', 'boxberry_validate_checkout', 10, 2);
+    add_action( 'woocommerce_order_status_changed', 'boxberry_register_on_status', 10, 3 );
 
-    function boxberry_validate_checkout($data, $errors)
+    function boxberry_validate_checkout( $data, $errors )
     {
-        if (!empty($errors->get_error_message('shipping'))) {
+        if ( ! empty( $errors->get_error_message( 'shipping' ) ) ) {
             return;
         }
 
-        $shippingMethod = array_map(static function ($i) {
-            $i = explode(':', $i);
+        $shippingMethod = array_map( static function ( $i ) {
+            $i = explode( ':', $i );
 
             return $i[0];
-        }, (array)$data['shipping_method']);
+        }, (array) $data['shipping_method'] );
 
-        $chosenDeliveryPoint = isset($_POST['boxberry_code']) ? $_POST['boxberry_code'] : $_COOKIE['bxb_code'];
+        $chosenDeliveryPoint = isset( $_POST['boxberry_code'] ) ? $_POST['boxberry_code'] : $_COOKIE['bxb_code'];
 
-        if (((!$data['ship_to_different_address'] && !$data['billing_city']) || ($data['ship_to_different_address'] && !$data['shipping_city']))
-            && (strpos($shippingMethod[0], 'boxberry') !== false)) {
-            $errors->add('shipping', '<strong>Необходимо указать город для расчета доставки Boxberry</strong>');
-        } elseif (empty($chosenDeliveryPoint) && strpos($shippingMethod[0], 'boxberry_self') !== false) {
-            $errors->add('shipping', '<strong>Необходимо выбрать пункт выдачи Boxberry</strong>');
+        if ( ( ( ! $data['ship_to_different_address'] && ! $data['billing_city'] ) || ( $data['ship_to_different_address'] && ! $data['shipping_city'] ) )
+             && ( strpos( $shippingMethod[0], 'boxberry' ) !== false ) ) {
+            $errors->add( 'shipping', '<strong>Необходимо указать город для расчета доставки Boxberry</strong>' );
+        } elseif ( empty( $chosenDeliveryPoint ) && strpos( $shippingMethod[0], 'boxberry_self' ) !== false ) {
+            $errors->add( 'shipping', '<strong>Необходимо выбрать пункт выдачи Boxberry</strong>' );
         }
     }
 
+    add_action( 'woocommerce_after_checkout_validation', 'boxberry_validate_checkout', 10, 2 );
 }
