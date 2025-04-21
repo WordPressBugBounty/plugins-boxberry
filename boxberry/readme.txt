@@ -1,7 +1,7 @@
 === Интеграция со службой доставки Boxberry ===
 
 Tags: доставка, модуль, плагин, boxberry, woocommerce
-Stable tag: 2.27
+Stable tag: 2.28
 Tested up to: 6.7.2
 Contributors: akazanstev, mrswed, vkozachkov
 Requires at least: 4.9
@@ -31,6 +31,10 @@ License URI: http://www.gnu.org/licenses/gpl-2.0.html
 [Техническая поддержка](https://sd.boxberry.ru)
 
 == Changelog ==
+
+= 2.28 =
+
+* Добавлена поддержка блочной страницы оформления заказа
 
 = 2.27 =
 

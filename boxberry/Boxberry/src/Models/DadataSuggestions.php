@@ -1,6 +1,6 @@
 <?php
 
-namespace boxberry\Models;
+namespace Boxberry\Models;
 
 class DadataSuggestions extends AbstractModel
 {

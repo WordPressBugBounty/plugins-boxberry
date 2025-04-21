@@ -14,9 +14,7 @@ jQuery(document).on('click', function (e) {
             let token = selectPointLink.getAttribute('data-boxberry-token');
             let targetStart = selectedPointLink.getAttribute('data-boxberry-target-start');
             let weight = selectPointLink.getAttribute('data-boxberry-weight');
-
             let surch = selectedPointLink.getAttribute('data-surch');
-
             let paymentSum = selectPointLink.getAttribute('data-paymentsum');
             let orderSum = selectPointLink.getAttribute('data-ordersum');
             let height = selectPointLink.getAttribute('data-height');
@@ -29,18 +27,23 @@ jQuery(document).on('click', function (e) {
                     boxberryPointName = result.name.replace('Алма-Ата', 'Алматы');
                     boxberrySelectedPointAddress = boxberryPointName + ' (' + result.address + ')';
 
-                    let addresSplit = result.address.split(',');
-                    let insertAddres = 'ПВЗ: ' + addresSplit[2].trim() + (addresSplit[3] !== undefined ? addresSplit[3] : '');
+                    let addressSplit = result.address.split(',');
+                    let insertAddress = 'ПВЗ: ' + addressSplit[2].trim() + (addressSplit[3] !== undefined ? addressSplit[3] : '');
 
                     if (document.getElementById('shipping_address_1')) {
-                        document.getElementById('shipping_address_1').value = insertAddres;
+                        document.getElementById('shipping_address_1').value = insertAddress;
                         if (document.getElementById('billing_address_1')) {
-                            document.getElementById('billing_address_1').value = insertAddres;
+                            document.getElementById('billing_address_1').value = insertAddress;
                         }
                     } else {
                         if (document.getElementById('billing_address_1')) {
-                            document.getElementById('billing_address_1').value = insertAddres;
+                            document.getElementById('billing_address_1').value = insertAddress;
                         }
+                    }
+
+                    // Новый чекаут
+                    if (window.updateBoxberryAddress) {
+                        window.updateBoxberryAddress(boxberrySelectedPointAddress);
                     }
 
                     let formData = new FormData();
@@ -77,6 +80,15 @@ function getCityField(){
 
     if (jQuery('#shipping_city').length){
         return jQuery('#shipping_city');
+    }
+
+    // Новый чекаут
+    if (jQuery('#billing-city').length && !jQuery('.wc-block-checkout__use-address-for-billing #checkbox-control-1').prop('checked')){
+        return jQuery('#billing-city');
+    }
+
+    if (jQuery('#shipping-city').length){
+        return jQuery('#shipping-city');
     }
 
     return false;

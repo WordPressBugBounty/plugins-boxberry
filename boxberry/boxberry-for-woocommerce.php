@@ -2,7 +2,7 @@
 /*
 Plugin Name: Boxberry for WooCommerce
 Description: The plugin allows you to automatically calculate the shipping cost and create Parsel for Boxberry
-Version: 2.27
+Version: 2.28
 Author: Boxberry
 Author URI: Boxberry.ru
 Text Domain: boxberry
@@ -505,7 +505,7 @@ if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', g
                     $deliveryCalculation->setOrderSum( $totalval );
                     $deliveryCalculation->setUseShopSettings( $surch );
                     $deliveryCalculation->setCmsName( 'wordpress' );
-                    $deliveryCalculation->setVersion( '2.27' );
+                    $deliveryCalculation->setVersion( '2.28' );
                     $deliveryCalculation->setUrl( bxbGetUrl() );
 
                     try {
@@ -1353,6 +1353,180 @@ if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', g
 
     add_action( 'woocommerce_after_shipping_rate', 'boxberry_woocommerce_after_shipping_rate' );
 
+    function boxberry_get_widget_link_data( $shipping_method = null, $city = '', $state = '' )
+    {
+        static $cached_widget_data = null;
+
+        WC()->cart->calculate_totals(); // Пересчёт корзины
+        if ( $shipping_method === null ) {
+            $chosen_shipping_method = WC()->session->get( 'chosen_shipping_methods' )[0];
+        } else {
+            $chosen_shipping_method = $shipping_method;
+        }
+
+        if ( $cached_widget_data !== null && isset( $cached_widget_data[ $chosen_shipping_method ] ) ) {
+            return $cached_widget_data[ $chosen_shipping_method ];
+        }
+
+        if ( strpos( $chosen_shipping_method, 'boxberry_self' ) !== false ) {
+            $packages = WC()->shipping()->get_packages();
+
+            if ( ! isset( $packages[0]['rates'] ) || ! is_array( $packages[0]['rates'] ) ) {
+                error_log( 'Boxberry: $packages[0]["rates"] не существует или не является массивом.' );
+
+                return false;
+            }
+
+            if ( ! isset( $packages[0]['rates'][ $chosen_shipping_method ] ) ) {
+                error_log( 'Boxberry: Метод доставки не найден в $packages[0]["rates"]. Ключи: ' . implode( ', ',
+                        array_keys( $packages[0]['rates'] ) ) );
+
+                return false;
+            }
+
+            $shipping_rate = $packages[0]['rates'][ $chosen_shipping_method ];
+
+            if ( ! $shipping_rate ) {
+                error_log( 'Boxberry: $shipping_rate равно null.' );
+
+                return false;
+            }
+
+            $shipping_method = WC_Shipping_Zones::get_shipping_method( $shipping_rate->get_instance_id() );
+
+            if ( ! $shipping_method ) {
+                error_log( 'Boxberry: $shipping_method равно null.' );
+
+                return false;
+            }
+
+            if ( isset( $shipping_method ) ) {
+                $key = $shipping_method->get_option('key');
+                $api_url = $shipping_method->get_option('api_url');
+
+                $client = new \Boxberry\Client\Client();
+                $client->setApiUrl($api_url);
+                $client->setKey($key);
+                $widgetKeyMethod = $client::getKeyIntegration();
+                $widgetKeyMethod->setToken($key);
+
+                try {
+                    $widgetResponse = $client->execute($widgetKeyMethod);
+                    if (empty($widgetResponse)) {
+                        return false;
+                    }
+                } catch (Exception $ex) {
+                    return false;
+                }
+
+                $widget_key = $widgetResponse->getWidgetKey();
+
+                $city  = !empty($city) ? $city : (WC()->customer->get_shipping_city() ?: WC()->customer->get_billing_city());
+                $state = !empty($state) ? $state : (WC()->customer->get_shipping_state() ?: WC()->customer->get_billing_state());
+
+                $city = str_replace(['Ё', 'Г ', 'АЛМАТЫ'], ['Е', '', 'АЛМА-АТА'], mb_strtoupper($city));
+
+                $weight = 0;
+                $current_unit = strtolower(get_option('woocommerce_weight_unit'));
+                $weight_c = 1;
+
+                if ($current_unit === 'kg') {
+                    $weight_c = 1000;
+                }
+
+                $dimension_c = 1;
+                $dimension_unit = strtolower(get_option('woocommerce_dimension_unit'));
+
+                switch ($dimension_unit) {
+                    case 'm':
+                        $dimension_c = 100;
+                        break;
+                    case 'mm':
+                        $dimension_c = 0.1;
+                        break;
+                }
+
+                $cartProducts = WC()->cart->get_cart();
+                $countProduct = count($cartProducts);
+
+                $height = 0;
+                $depth = 0;
+                $width = 0;
+
+                foreach ( $cartProducts as $cartProduct ) {
+                    $product = wc_get_product( $cartProduct['product_id'] );
+
+                    $itemWeight = bxbGetWeight( $product, $cartProduct['variation_id'] );
+                    $itemWeight = (float)$itemWeight * $weight_c;
+
+                    if ( $countProduct == 1 && ( $cartProduct['quantity'] == 1 ) ) {
+                        $height = (float)$product->get_height() * $dimension_c;
+                        $depth = (float)$product->get_length() * $dimension_c;
+                        $width = (float)$product->get_width() * $dimension_c;
+                    }
+
+                    $weight += (!empty($itemWeight) ? $itemWeight : (float)$shipping_method->get_option('default_weight')) * $cartProduct['quantity'];
+                }
+
+                $totalval = WC()->cart->get_cart_contents_total() + WC()->cart->get_total_tax();
+
+                $surch = $shipping_method->get_option('surch') !== '' ? (int)$shipping_method->get_option('surch') : 1;
+
+                if ($shipping_rate->get_method_id() === 'boxberry_self_after') {
+                    $payment = $totalval;
+                } else {
+                    $payment = 0;
+                }
+
+                $link_title = 'Выберите пункт выдачи Boxberry';
+
+                $button = '<p style="margin: 4px 0 8px 15px;"><a class="bxbbutton" href="#"
+							  style="color:inherit;"
+							  data-surch =" ' . esc_attr($surch) . '"
+						      data-boxberry-open="true"
+							  data-method="' . esc_attr($shipping_rate->get_method_id()) . '"
+							  data-boxberry-token="' . esc_attr($widget_key) . '"
+							  data-boxberry-city="' . esc_attr($state . ' ' . $city) . '"
+							  data-boxberry-weight="' . esc_attr($weight) . '"
+							  data-paymentsum="' . esc_attr($payment) . '"
+							  data-ordersum="' . esc_attr($totalval) . '"
+							  data-height="' . esc_attr($height) . '"
+							  data-width="' . esc_attr($width) . '"
+							  data-depth="' . esc_attr($depth) . '"
+							  data-api-url="' . esc_attr($api_url) . '"
+							>' . $link_title . '</a></p>';
+
+                $cached_widget_data[ $chosen_shipping_method ] = $button;
+
+                return $button;
+            }
+        }
+
+        return false;
+    }
+
+    function boxberry_update_widget_data()
+    {
+        check_ajax_referer( 'boxberry_update_nonce', 'security' );
+
+        $city            = isset( $_POST['city'] ) ? sanitize_text_field( $_POST['city'] ) : '';
+        $state           = isset( $_POST['state'] ) ? sanitize_text_field( $_POST['state'] ) : '';
+        $shipping_method = isset( $_POST['shipping_method'] ) ? sanitize_text_field( $_POST['shipping_method'] ) : null;
+
+        WC()->cart->calculate_totals();
+
+        $widget_data = boxberry_get_widget_link_data( $shipping_method, $city, $state );
+
+        if ( $widget_data ) {
+            wp_send_json_success( [ 'boxberry_widget_link' => $widget_data ] );
+        } else {
+            wp_send_json_error( 'Ошибка при получении данных виджета.' );
+        }
+    }
+
+    add_action( 'wp_ajax_boxberry_update_widget_data', 'boxberry_update_widget_data' );
+    add_action( 'wp_ajax_nopriv_boxberry_update_widget_data', 'boxberry_update_widget_data' );
+
     function boxberry_script_handle()
     {
         return;
@@ -1363,25 +1537,50 @@ if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', g
         if ( is_cart() || is_checkout() ) {
             $widget_url = get_option( 'wiidget_url' );
             if ( strpos( $widget_url, 'http://' ) !== false ) {
-                $protocol   = 'http://';
+                $protocol = 'http://';
                 $widget_url = str_replace( $protocol, '', $widget_url );
                 wp_register_script( 'boxberry_points', $protocol . $widget_url );
             } else {
                 if ( strpos( $widget_url, 'https://' ) !== false ) {
-                    $protocol   = 'https://';
+                    $protocol = 'https://';
                     $widget_url = str_replace( $protocol, '', $widget_url );
                     wp_register_script( 'boxberry_points', $protocol . $widget_url );
                 } else {
                     wp_register_script( 'boxberry_points', 'https://points.boxberry.de/js/boxberry.js' );
                 }
             }
+            wp_enqueue_script( 'jquery' );
+
             wp_enqueue_script( 'boxberry_points' );
 
-            wp_enqueue_script( 'boxberry_script_handle', plugin_dir_url( __FILE__ ) . ( 'js/boxberry.js' ), array( "jquery" ), '2.20' );
+            wp_enqueue_script( 'boxberry_script_handle', plugin_dir_url( __FILE__ ) . ( 'js/boxberry.js' ), [ 'jquery' ], '2.28' );
 
             wp_register_style( 'boxberry_button', plugin_dir_url( __FILE__ ) . ( 'css/bxbbutton.css' ) );
 
             wp_enqueue_style( 'boxberry_button' );
+
+            $city  = WC()->customer->get_shipping_city() ?: WC()->customer->get_billing_city();
+            $state = WC()->customer->get_shipping_state() ?: WC()->customer->get_billing_state();
+
+            $widget_data = boxberry_get_widget_link_data( $city, $state );
+
+            wp_enqueue_script(
+                'boxberry-react-app',
+                plugin_dir_url( __FILE__ ) . 'dist/bundle.js',
+                [ 'wp-element', 'wp-i18n', 'wp-plugins', 'wc-blocks-checkout', 'jquery' ],
+                null,
+                true
+            );
+
+            wp_localize_script(
+                'boxberry-react-app',
+                'wp_data',
+                [
+                    'ajax_url'             => admin_url( 'admin-ajax.php' ),
+                    'boxberry_nonce'       => wp_create_nonce( 'boxberry_update_nonce' ),
+                    'boxberry_widget_link' => $widget_data,
+                ]
+            );
         }
     }
 
@@ -1407,6 +1606,59 @@ if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', g
     }
 
     add_action( 'admin_enqueue_scripts', 'my_admin_enqueue' );
+
+    function boxberry_save_pickup_point_block_checkout( $order )
+    {
+        $shipping_methods = $order->get_shipping_methods();
+        foreach ( $shipping_methods as $shipping_method ) {
+            $method_id = $shipping_method->get_method_id();
+
+            if ( strpos( $method_id, 'boxberry_self' ) !== false ) {
+                if ( isset( $_COOKIE['bxb_code'] ) ) {
+                    $order->update_meta_data( 'boxberry_code', sanitize_text_field( $_COOKIE['bxb_code'] ) );
+                    $order->update_meta_data( 'boxberry_address', sanitize_text_field( $_COOKIE['bxb_address'] ?? '' ) );
+                }
+            }
+        }
+
+        $order->save();
+    }
+
+    add_action( 'woocommerce_store_api_checkout_order_processed', 'boxberry_save_pickup_point_block_checkout', 10, 1 );
+
+    function boxberry_block_checkout_validation( $result, $server, $request ) {
+        $route  = $request->get_route();
+        $method = $request->get_method();
+
+        if ( 'POST' === $method && false !== strpos( $route, '/wc/store/v1/checkout' ) ) {
+            if ( null === WC()->session ) {
+                if ( class_exists( 'WC_Session_Handler' ) ) {
+                    WC()->session = new WC_Session_Handler();
+                    WC()->session->init();
+                } else {
+                    return $result;
+                }
+            }
+
+            $chosen = WC()->session->get( 'chosen_shipping_methods', [] );
+
+            if ( is_array( $chosen )
+                && ! empty( $chosen[0] )
+                && ( strpos( $chosen[0], 'boxberry_self' ) !== false )
+                && empty( $_COOKIE['bxb_code'] )
+            ) {
+                return new \WP_Error(
+                    'boxberry_missing_pvz',
+                    '<strong>Необходимо выбрать пункт выдачи Boxberry</strong>',
+                    [ 'status' => 400 ]
+                );
+            }
+        }
+
+        return $result;
+    }
+
+    add_filter( 'rest_pre_dispatch', 'boxberry_block_checkout_validation', 10, 3 );
 
     function boxberry_put_choice_code( $order_id )
     {
