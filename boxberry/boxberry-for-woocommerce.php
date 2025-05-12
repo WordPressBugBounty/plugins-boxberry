@@ -2,7 +2,7 @@
 /*
 Plugin Name: Boxberry for WooCommerce
 Description: The plugin allows you to automatically calculate the shipping cost and create Parsel for Boxberry
-Version: 2.28
+Version: 2.29
 Author: Boxberry
 Author URI: Boxberry.ru
 Text Domain: boxberry
@@ -505,7 +505,7 @@ if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', g
                     $deliveryCalculation->setOrderSum( $totalval );
                     $deliveryCalculation->setUseShopSettings( $surch );
                     $deliveryCalculation->setCmsName( 'wordpress' );
-                    $deliveryCalculation->setVersion( '2.28' );
+                    $deliveryCalculation->setVersion( '2.29' );
                     $deliveryCalculation->setUrl( bxbGetUrl() );
 
                     try {
@@ -1532,6 +1532,21 @@ if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', g
         return;
     }
 
+    function is_blocks_checkout_page()
+    {
+        if ( ! function_exists( 'has_block' ) ) {
+            return false;
+        }
+
+        global $post;
+
+        if ( is_checkout() && is_a( $post, 'WP_Post' ) ) {
+            return has_block( 'woocommerce/checkout', $post );
+        }
+
+        return false;
+    }
+
     function my_enqueue( $hook )
     {
         if ( is_cart() || is_checkout() ) {
@@ -1564,23 +1579,25 @@ if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', g
 
             $widget_data = boxberry_get_widget_link_data( $city, $state );
 
-            wp_enqueue_script(
-                'boxberry-react-app',
-                plugin_dir_url( __FILE__ ) . 'dist/bundle.js',
-                [ 'wp-element', 'wp-i18n', 'wp-plugins', 'wc-blocks-checkout', 'jquery' ],
-                null,
-                true
-            );
+            if ( is_blocks_checkout_page() ) {
+                wp_enqueue_script(
+                    'boxberry-react-app',
+                    plugin_dir_url( __FILE__ ) . 'dist/bundle.js',
+                    [ 'wp-element', 'wp-i18n', 'wp-plugins', 'wc-blocks-checkout', 'jquery' ],
+                    null,
+                    true
+                );
 
-            wp_localize_script(
-                'boxberry-react-app',
-                'wp_data',
-                [
-                    'ajax_url'             => admin_url( 'admin-ajax.php' ),
-                    'boxberry_nonce'       => wp_create_nonce( 'boxberry_update_nonce' ),
-                    'boxberry_widget_link' => $widget_data,
-                ]
-            );
+                wp_localize_script(
+                    'boxberry-react-app',
+                    'wp_data',
+                    [
+                        'ajax_url'             => admin_url( 'admin-ajax.php' ),
+                        'boxberry_nonce'       => wp_create_nonce( 'boxberry_update_nonce' ),
+                        'boxberry_widget_link' => $widget_data,
+                    ]
+                );
+            }
         }
     }
 
